@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# local planning and specification docs
+/docs/
+/prompts/
+
 # production
 /build
 
