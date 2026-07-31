@@ -1,37 +1,52 @@
-import React from "react";
+import { LockKeyhole, MapPinned, MessageCircle, ShieldCheck } from "lucide-react";
+import { categories } from "@/lib/frontend-data";
+import { CategoryCard } from "./domain-cards";
+import { SectionHeading } from "./app-primitives";
 
-const FEATURES = [
+const features = [
   {
-    title: "Request management",
-    description:
-      "Quickly publish and triage help requests so volunteers can respond faster.",
+    title: "Verified mentors",
+    description: "Profiles highlight identity, experience, languages, ratings, and availability.",
+    icon: ShieldCheck,
   },
   {
-    title: "Volunteer coordination",
-    description:
-      "Assign, schedule, and message volunteers — keep everyone in sync.",
+    title: "Secure booking",
+    description: "Every request follows a clear status flow with reminders and ownership checks.",
+    icon: LockKeyhole,
   },
   {
-    title: "Impact tracking",
-    description:
-      "Monitor outcomes and produce simple reports to understand reach and impact.",
+    title: "Nationwide access",
+    description: "Find guidance by city, language, category, session mode, and budget.",
+    icon: MapPinned,
+  },
+  {
+    title: "Human conversations",
+    description: "The product is shaped around clarity, confidence, and supportive next steps.",
+    icon: MessageCircle,
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="py-16 bg-gray-50">
-      <div className="mx-auto max-w-5xl px-6 text-center">
-        <h2 className="text-2xl font-semibold text-indigo-950">Booking & coordination</h2>
-        <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-          Tools for publishing requests, managing bookings, and keeping volunteers in sync.
-        </p>
-        <div className="mt-10 grid gap-8 sm:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-medium text-indigo-950">{f.title}</h3>
-              <p className="mt-2 text-gray-600">{f.description}</p>
+    <section id="features" className="py-14">
+      <div className="app-container">
+        <SectionHeading
+          eyebrow="Why Sahayak"
+          title="A calm way to find the right person"
+          description="Search engines provide answers. Sahayak helps people reach someone experienced enough to guide the next step."
+        />
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          {features.map(({ icon: Icon, ...feature }) => (
+            <div key={feature.title} className="app-card p-5">
+              <Icon size={22} className="text-app-primary" aria-hidden="true" />
+              <h3 className="mt-4 font-semibold text-app-text">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-app-muted">{feature.description}</p>
             </div>
+          ))}
+        </div>
+        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {categories.slice(0, 8).map((category) => (
+            <CategoryCard key={category.slug} category={category} />
           ))}
         </div>
       </div>

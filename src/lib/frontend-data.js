@@ -1,0 +1,198 @@
+export const categories = [
+  {
+    name: "Career",
+    slug: "career",
+    icon: "Briefcase",
+    mentors: 1840,
+    description: "Career planning, resumes, interviews, and role transitions.",
+  },
+  {
+    name: "Education",
+    slug: "education",
+    icon: "GraduationCap",
+    mentors: 1260,
+    description: "Study planning, admissions, scholarships, and learning paths.",
+  },
+  {
+    name: "Health",
+    slug: "health",
+    icon: "HeartPulse",
+    mentors: 920,
+    description: "Second opinions, lifestyle guidance, and trusted health advice.",
+  },
+  {
+    name: "Agriculture",
+    slug: "agriculture",
+    icon: "Sprout",
+    mentors: 730,
+    description: "Crop care, schemes, equipment, markets, and organic farming.",
+  },
+  {
+    name: "Business",
+    slug: "business",
+    icon: "LineChart",
+    mentors: 1080,
+    description: "Strategy, finance, fundraising, hiring, and growth.",
+  },
+  {
+    name: "Legal",
+    slug: "legal",
+    icon: "Scale",
+    mentors: 440,
+    description: "Property, documentation, consumer rights, and legal direction.",
+  },
+  {
+    name: "Parenting",
+    slug: "parenting",
+    icon: "Users",
+    mentors: 510,
+    description: "Child development, family wellbeing, nutrition, and counseling.",
+  },
+  {
+    name: "Technology",
+    slug: "technology",
+    icon: "Code2",
+    mentors: 1450,
+    description: "Software careers, product thinking, AI, and technical growth.",
+  },
+];
+
+export const mentors = [
+  {
+    name: "Dr. Ananya Mehta",
+    slug: "dr-ananya-mehta",
+    initials: "AM",
+    headline: "Cardiologist guiding families through second opinions",
+    category: "Health",
+    city: "Delhi",
+    rating: "4.9",
+    reviews: 214,
+    experience: "16 yrs",
+    price: "Rs. 900",
+    mode: "Video",
+    availability: "Today",
+    verified: true,
+    languages: ["Hindi", "English"],
+    bio: "Helps patients understand reports, treatment options, and next steps with calm, practical guidance.",
+    specializations: ["Second opinions", "Lifestyle", "Preventive care"],
+  },
+  {
+    name: "Raghav Bansal",
+    slug: "raghav-bansal",
+    initials: "RB",
+    headline: "Startup founder and fundraising mentor",
+    category: "Business",
+    city: "Bengaluru",
+    rating: "4.8",
+    reviews: 178,
+    experience: "12 yrs",
+    price: "Rs. 1200",
+    mode: "Video",
+    availability: "Tomorrow",
+    verified: true,
+    languages: ["English", "Hindi"],
+    bio: "Works with early founders on pitch narratives, GTM planning, hiring, and investor conversations.",
+    specializations: ["Fundraising", "GTM", "Leadership"],
+  },
+  {
+    name: "Prof. Kavita Rao",
+    slug: "prof-kavita-rao",
+    initials: "KR",
+    headline: "Professor helping students choose research paths",
+    category: "Education",
+    city: "Pune",
+    rating: "4.9",
+    reviews: 302,
+    experience: "22 yrs",
+    price: "Rs. 700",
+    mode: "Video",
+    availability: "Fri",
+    verified: true,
+    languages: ["English", "Marathi", "Hindi"],
+    bio: "Guides students through higher education choices, research proposals, paper reviews, and scholarships.",
+    specializations: ["Research", "Admissions", "Study planning"],
+  },
+  {
+    name: "Suresh Patil",
+    slug: "suresh-patil",
+    initials: "SP",
+    headline: "Organic farming advisor for small farms",
+    category: "Agriculture",
+    city: "Nashik",
+    rating: "4.7",
+    reviews: 96,
+    experience: "18 yrs",
+    price: "Free",
+    mode: "Phone",
+    availability: "Today",
+    verified: true,
+    languages: ["Marathi", "Hindi"],
+    bio: "Supports farmers with crop disease diagnosis, organic methods, seasonal planning, and government schemes.",
+    specializations: ["Crop care", "Organic farming", "Schemes"],
+  },
+];
+
+export const testimonials = [
+  {
+    name: "Meera Sharma",
+    role: "Career switcher",
+    quote:
+      "My mentor helped me choose a path without feeling rushed. I left the session with a plan I could actually follow.",
+  },
+  {
+    name: "Imran Khan",
+    role: "Small business owner",
+    quote:
+      "The guidance was practical, not generic. Thirty minutes saved me weeks of trial and error.",
+  },
+  {
+    name: "Nisha Verma",
+    role: "Parent",
+    quote:
+      "It felt like speaking to someone who understood the concern, not just the subject.",
+  },
+];
+
+export const bookings = [
+  {
+    mentor: "Dr. Ananya Mehta",
+    topic: "Report review and next steps",
+    date: "Today",
+    time: "6:00 PM",
+    status: "Confirmed",
+  },
+  {
+    mentor: "Raghav Bansal",
+    topic: "Pitch deck review",
+    date: "Tomorrow",
+    time: "11:30 AM",
+    status: "Requested",
+  },
+  {
+    mentor: "Prof. Kavita Rao",
+    topic: "Research roadmap",
+    date: "Friday",
+    time: "4:00 PM",
+    status: "Completed",
+  },
+];
+
+export const notifications = [
+  "Your session with Dr. Ananya is confirmed for 6:00 PM.",
+  "Raghav usually responds within 4 hours.",
+  "Your profile is 72% complete.",
+];
+
+export const adminRows = [
+  ["Verification queue", "18 mentors", "6 high priority"],
+  ["Open reports", "7 reports", "2 need review"],
+  ["Daily signups", "284 users", "+12%"],
+  ["Active sessions", "1,246 sessions", "Healthy"],
+];
+
+export const platformStats = [
+  { label: "Mentors", value: "10,000+" },
+  { label: "Sessions", value: "50,000+" },
+  { label: "Categories", value: "100+" },
+  { label: "Average rating", value: "4.9" },
+];

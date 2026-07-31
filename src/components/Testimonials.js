@@ -1,31 +1,27 @@
-import React from "react";
-
-const TESTIMONIALS = [
-  {
-    name: "Maya R.",
-    role: "Volunteer coordinator",
-    quote:
-      "Sahayak helped our team dispatch volunteers 3x faster during the last drive. The request flows are intuitive and volunteers love it.",
-  },
-  {
-    name: "Arjun K.",
-    role: "Community lead",
-    quote:
-      "We could finally measure our impact and see where help was needed most — that changed how we prioritized outreach.",
-  },
-];
+import { testimonials } from "@/lib/frontend-data";
+import { Avatar, Rating, SectionHeading } from "./app-primitives";
 
 export function Testimonials() {
   return (
-    <section id="testimonials" className="py-16 bg-white">
-      <div className="mx-auto max-w-5xl px-6 text-center">
-        <h2 className="text-2xl font-semibold text-indigo-950">What people say</h2>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2">
-          {TESTIMONIALS.map((t) => (
-            <blockquote key={t.name} className="rounded-lg bg-gray-50 p-6 text-left shadow-sm">
-              <p className="text-gray-700">“{t.quote}”</p>
-              <footer className="mt-4 text-sm text-gray-600">
-                — {t.name}, <span className="font-medium">{t.role}</span>
+    <section id="testimonials" className="border-y border-app-border bg-white py-14">
+      <div className="app-container">
+        <SectionHeading
+          eyebrow="Trust"
+          title="People leave with more confidence"
+          description="Every screen is designed to reduce uncertainty and help one person help another."
+          align="center"
+        />
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <blockquote key={testimonial.name} className="app-card p-5">
+              <Rating value="5.0" />
+              <p className="mt-4 text-sm leading-6 text-app-muted">{testimonial.quote}</p>
+              <footer className="mt-5 flex items-center gap-3">
+                <Avatar initials={testimonial.name.split(" ").map((part) => part[0]).join("")} size="sm" />
+                <div>
+                  <p className="text-sm font-semibold text-app-text">{testimonial.name}</p>
+                  <p className="text-xs text-app-muted">{testimonial.role}</p>
+                </div>
               </footer>
             </blockquote>
           ))}
