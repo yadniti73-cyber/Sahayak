@@ -4,6 +4,7 @@ Sahayak is a mentorship marketplace platform that connects **seekers** (people l
 
 This README is the single entry point for engineers picking up this repo. It summarizes the approved architecture, database design, authentication design, and folder structure so implementation can proceed without re-deriving decisions already made. The full source documents this is distilled from live in [`docs/`](./docs).
 
+Link = https://sahayak-india.onrender.com
 > This is a fresh scaffold: folders exist per the approved structure, but application code has not been written yet. Build order is defined in [§9](#9-recommended-build-order).
 
 ---
