@@ -2,18 +2,23 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { publicNavigationItems } from "@/lib/navigation";
 import { ButtonLink } from "../app-primitives";
-
+import Image from "next/image";
 export function PublicHeader({ children, className = "" }) {
   if (children) {
     return <header className={className}>{children}</header>;
   }
 
   return (
-    <header className={`sticky top-0 z-40 border-b border-app-border bg-white/95 backdrop-blur ${className}`}>
+    <header
+      className={`sticky top-0 z-40 border-b border-app-border bg-white/95 backdrop-blur ${className}`}
+    >
       <div className="app-container flex min-h-16 items-center gap-4">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold text-app-primary">
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-xl font-bold text-app-primary"
+        >
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-app-primary text-white">
-            S
+            <Image src="/images/logo.png" alt="logo" width={36} height={36} className="h-full w-full object-contain" />
           </span>
           Sahayak
         </Link>
@@ -25,7 +30,10 @@ export function PublicHeader({ children, className = "" }) {
             placeholder="Search mentors, city, language"
           />
         </form>
-        <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+        <nav
+          className="ml-auto hidden items-center gap-1 lg:flex"
+          aria-label="Primary navigation"
+        >
           {publicNavigationItems.map((item) => (
             <Link
               key={item.href}
@@ -37,7 +45,10 @@ export function PublicHeader({ children, className = "" }) {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
-          <Link href="/login" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-app-primary hover:bg-blue-50 sm:inline-flex">
+          <Link
+            href="/login"
+            className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-app-primary hover:bg-blue-50 sm:inline-flex"
+          >
             Sign in
           </Link>
           <ButtonLink href="/register" className="px-4 py-2">

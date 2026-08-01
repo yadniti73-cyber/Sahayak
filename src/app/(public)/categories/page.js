@@ -1,7 +1,10 @@
 import { PublicShell, SectionHeading } from "@/components";
 import { CategoryGrid } from "@/components/page-sections";
+import { getCategories } from "@/features/catalog/server/service";
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const categories = await getCategories();
+
   return (
     <PublicShell>
       <section className="bg-white py-12">
@@ -15,7 +18,7 @@ export default function CategoriesPage() {
       </section>
       <section className="py-10">
         <div className="app-container">
-          <CategoryGrid />
+          <CategoryGrid items={categories} />
         </div>
       </section>
     </PublicShell>

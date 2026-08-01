@@ -1,7 +1,10 @@
 import { PublicShell, SectionHeading } from "@/components";
 import { FilterStrip, MentorGrid } from "@/components/page-sections";
+import { getMentors } from "@/features/catalog/server/service";
 
-export default function MentorsPage() {
+export default async function MentorsPage() {
+  const mentors = await getMentors({ limit: 20 });
+
   return (
     <PublicShell>
       <section className="bg-white py-12">
@@ -18,7 +21,7 @@ export default function MentorsPage() {
       </section>
       <section className="py-10">
         <div className="app-container">
-          <MentorGrid />
+          <MentorGrid items={mentors} />
         </div>
       </section>
     </PublicShell>

@@ -46,7 +46,7 @@ export function CategoryCard({ category }) {
         </span>
         <div>
           <h3 className="font-semibold text-app-text">{category.name}</h3>
-          <p className="text-sm text-app-muted">{category.mentors.toLocaleString()} mentors</p>
+          <p className="text-sm text-app-muted">{(category.mentorCount || 0).toLocaleString()} mentors</p>
         </div>
       </div>
       <p className="mt-4 text-sm leading-6 text-app-muted">{category.description}</p>
@@ -83,7 +83,7 @@ export function MentorCard({ mentor, compact = false }) {
       {!compact ? (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-app-border pt-4">
           <div className="flex flex-wrap items-center gap-4">
-            <Rating value={mentor.rating} reviews={mentor.reviews} />
+            <Rating value={mentor.rating} reviews={mentor.reviews || mentor.reviewsCount || 0} />
             <span className="text-sm text-app-muted">{mentor.experience}</span>
             <span className="text-sm font-semibold text-app-text">{mentor.price}</span>
           </div>

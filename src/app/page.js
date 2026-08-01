@@ -4,9 +4,10 @@ import { Hero } from "@/components/Hero";
 import { Testimonials } from "@/components/Testimonials";
 import { ButtonLink, Panel, SectionHeading } from "@/components/app-primitives";
 import { MentorCard } from "@/components/domain-cards";
-import { mentors } from "@/lib/frontend-data";
+import { getMentors } from "@/features/catalog/server/service";
 
-export default function Home() {
+export default async function Home() {
+  const mentors = await getMentors({ limit: 4 });
   return (
     <PublicShell>
       <Hero />
@@ -22,7 +23,7 @@ export default function Home() {
             <ButtonLink href="/mentors" variant="secondary">Browse all</ButtonLink>
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-2">
-            {mentors.slice(0, 4).map((mentor) => (
+            {mentors.map((mentor) => (
               <MentorCard key={mentor.slug} mentor={mentor} />
             ))}
           </div>
@@ -55,7 +56,7 @@ export default function Home() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <ButtonLink href="/mentors" variant="secondary">Find mentor</ButtonLink>
-              <ButtonLink href="/register" className="border-white bg-white text-app-primary hover:bg-blue-50">Become mentor</ButtonLink>
+              <ButtonLink href="/register" className="border-white bg-white text-black hover:bg-blue-50">Become mentor</ButtonLink>
             </div>
           </div>
         </div>

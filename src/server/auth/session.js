@@ -1,0 +1,32 @@
+import { createAuthSession, findAuthSessionById, revokeAuthSession, revokeSessionsForUser as revokeSessionsForUserRepo } from "@/server/repositories/authSessions";
+import { signJwt, verifyJwt } from "@/server/auth/jwt";
+
+export async function createSession({ userId, userAgent, ipAddress, role = "SEEKER" }) {
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+  const session = await createAuthSession({ userId, userAgent, ipAddress, expiresAt });
+
+  const token = signJwt({ sub: userId.toString(), sessionId: session._id.toString(), role });
+  return { token, session };
+}
+
+export async function verifySessionToken(token) {
+  const payload = verifyJwt(token);
+  if (!payload?.sessionId) {
+    return null;
+  }
+
+  const session = await findAuthSessionById(payload.sessionId);
+  if (!session || session.revokedAt || (session.expiresAt && new Date(session.expiresAt) < new Date())) {
+    return null;
+  }
+
+  return { payload, session };
+}
+
+export async function revokeSession(sessionId, reason = "logout") {
+  return revokeAuthSession(sessionId, reason);
+}
+
+export async function revokeSessionsForUser(userId, reason = "password_reset") {
+  return revokeSessionsForUserRepo(userId, reason);
+}
