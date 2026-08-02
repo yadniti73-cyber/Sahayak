@@ -8,7 +8,7 @@ export async function findUserById(id) {
   return User.findById(id).lean();
 }
 
-export async function createUser({ email, passwordHash, provider = "local", providerId = null, pictureUrl = "", firstName, lastName, role = "SEEKER" }) {
+export async function createUser({ email, passwordHash = "", provider = "local", providerId = null, pictureUrl = "", firstName, lastName, role = "SEEKER" }) {
   const user = new User({ email, passwordHash, provider, providerId, pictureUrl, firstName, lastName, role });
   return user.save();
 }

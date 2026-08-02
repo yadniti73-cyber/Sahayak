@@ -79,7 +79,7 @@ export async function loginUser(payload, { userAgent = "unknown", ipAddress = ""
     throw new Error("Your account is not active.");
   }
 
-  const passwordMatches = await bcrypt.compare(parsed.password, user.passwordHash);
+  const passwordMatches = user.passwordHash ? await bcrypt.compare(parsed.password, user.passwordHash) : false;
   if (!passwordMatches) {
     throw new Error("Invalid email or password.");
   }
@@ -125,7 +125,7 @@ export async function loginWithGoogleCode(code, { userAgent = "unknown", ipAddre
 
     user = await createUser({
       email,
-      passwordHash: undefined,
+      passwordHash: "",
       provider: "google",
       providerId: googlePayload.sub,
       pictureUrl,
@@ -133,6 +133,59 @@ export async function loginWithGoogleCode(code, { userAgent = "unknown", ipAddre
       lastName,
       role: "SEEKER",
     });
+  }
+
+  if (user.status !== "ACTIVE") {
+    throw new Error("Your account is not active.");
+  }
+
+  const { token, session } = await createSession({
+    userId: user._id,
+    userAgent,
+    ipAddress,
+    role: user.role,
+  });
+
+  return {
+    user: {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
+    token,
+    sessionId: session._id.toString(),
+  };
+}
+
+export async function loginWithGoogleIdToken(idToken, { userAgent = "unknown", ipAddress = "" } = {}) {
+  const parsed = z.string().min(1).parse(idToken);
+  await connectMongo();
+
+  const googlePayload = await verifyGoogleIdToken(parsed);
+  const email = googlePayload.email.toLowerCase();
+  let user = await findUserByEmail(email);
+
+  if (!user) {
+    const firstName = googlePayload.given_name || googlePayload.name?.split(" ")[0] || "";
+    const lastName = googlePayload.family_name || googlePayload.name?.split(" ").slice(1).join(" ") || "";
+    const pictureUrl = googlePayload.picture || "";
+
+    user = await createUser({
+      email,
+      passwordHash: "",
+      provider: "google",
+      providerId: googlePayload.sub,
+      pictureUrl,
+      firstName,
+      lastName,
+      role: "SEEKER",
+    });
+  }
+
+  if (user.provider === "local") {
+    throw new Error("This account is registered with email and password. Please sign in using your password.");
   }
 
   if (user.status !== "ACTIVE") {

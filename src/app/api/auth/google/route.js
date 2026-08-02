@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { loginWithGoogleIdToken } from "@/features/auth/server/service";
+import { setAuthCookie } from "@/server/auth/cookies";
 import { appConfig } from "@/server/config";
 
 // GET /api/auth/google — redirects the browser to Google's consent screen.
@@ -27,4 +29,18 @@ export async function GET() {
   });
 
   return response;
+}
+
+export async function POST(request) {
+  try {
+    const payload = await request.json();
+    const userAgent = request.headers.get("user-agent") || "";
+    const ipAddress = request.headers.get("x-forwarded-for") || "";
+
+    const result = await loginWithGoogleIdToken(payload.idToken, { userAgent, ipAddress });
+    const response = NextResponse.json({ success: true, data: { user: result.user }, message: "Google login succeeded." });
+    return setAuthCookie(response, result.token);
+  } catch (error) {
+    return NextResponse.json({ success: false, message: error.message || "Unable to login with Google." }, { status: 400 });
+  }
 }

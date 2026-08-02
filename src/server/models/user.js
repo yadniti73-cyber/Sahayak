@@ -3,7 +3,12 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    passwordHash: { type: String },
+    passwordHash: {
+      type: String,
+      required: function () {
+        return this.provider === "local";
+      },
+    },
     provider: { type: String, enum: ["local", "google"], default: "local", required: true },
     providerId: { type: String, default: null },
     pictureUrl: { type: String, default: "" },

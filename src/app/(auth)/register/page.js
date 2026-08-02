@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PublicShell, Panel, SectionHeading } from "@/components";
-import { ButtonLink } from "@/components/app-primitives";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -54,9 +54,7 @@ export default function RegisterPage() {
           />
           <Panel>
             <div className="grid gap-4">
-              <a href="/api/auth/google" className="app-button app-button--outline w-full text-center">
-                Continue with Google
-              </a>
+              <GoogleAuthButton />
             </div>
             <div className="my-4 flex items-center gap-3 text-xs font-semibold uppercase text-app-muted">
               <span className="h-px flex-1 bg-app-border" />

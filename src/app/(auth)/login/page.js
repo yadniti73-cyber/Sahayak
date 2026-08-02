@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PublicShell, Panel, SectionHeading } from "@/components";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 
 const GOOGLE_ERROR_MESSAGES = {
   google_auth_denied: "Google sign-in was cancelled.",
@@ -70,9 +71,7 @@ export default function LoginPage() {
           />
           <Panel>
             <div className="grid gap-4">
-              <a href="/api/auth/google" className="app-button app-button--outline w-full text-center">
-                Continue with Google
-              </a>
+              <GoogleAuthButton />
               <Suspense fallback={null}>
                 <GoogleAuthError />
               </Suspense>
