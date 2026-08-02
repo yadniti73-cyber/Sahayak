@@ -53,6 +53,16 @@ export default function RegisterPage() {
             description="Sign up to save mentors, request sessions, and manage your guidance journey."
           />
           <Panel>
+            <div className="grid gap-4">
+              <a href="/api/auth/google" className="app-button app-button--outline w-full text-center">
+                Continue with Google
+              </a>
+            </div>
+            <div className="my-4 flex items-center gap-3 text-xs font-semibold uppercase text-app-muted">
+              <span className="h-px flex-1 bg-app-border" />
+              or
+              <span className="h-px flex-1 bg-app-border" />
+            </div>
             <form className="grid gap-4" onSubmit={handleSubmit}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-semibold">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PublicShell, Panel, SectionHeading } from "@/components";
@@ -11,16 +11,26 @@ const GOOGLE_ERROR_MESSAGES = {
   google_auth_failed: "Unable to sign in with Google. Please try again.",
 };
 
+function GoogleAuthError() {
+  const searchParams = useSearchParams();
+  const googleErrorCode = searchParams.get("error");
+  const googleError = googleErrorCode
+    ? GOOGLE_ERROR_MESSAGES[googleErrorCode] || "Unable to sign in with Google."
+    : "";
+
+  if (!googleError) {
+    return null;
+  }
+
+  return <p className="mt-2 text-sm text-red-600">{googleError}</p>;
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const googleErrorCode = searchParams.get("error");
-  const googleError = googleErrorCode ? GOOGLE_ERROR_MESSAGES[googleErrorCode] || "Unable to sign in with Google." : "";
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -63,7 +73,9 @@ export default function LoginPage() {
               <a href="/api/auth/google" className="app-button app-button--outline w-full text-center">
                 Continue with Google
               </a>
-              {googleError ? <p className="mt-2 text-sm text-red-600">{googleError}</p> : null}
+              <Suspense fallback={null}>
+                <GoogleAuthError />
+              </Suspense>
             </div>
             <form className="grid gap-4" onSubmit={handleSubmit}>
               <label className="grid gap-2 text-sm font-semibold">
