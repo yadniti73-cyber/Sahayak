@@ -242,7 +242,41 @@ Full schema fields, indexes, and aggregation strategy: [`docs/sahayak-mongodb-ar
 
 Full flow diagrams, helper function signatures, and API auth rules: [`docs/sahayak-authentication-architecture.md`](./docs/sahayak-authentication-architecture.md).
 
-## 8. API Conventions
+## 8. Environment Variables
+
+Sahayak depends on environment variables for production configuration. Do not commit real secrets to source control. The values below are examples only.
+
+Example `.env`:
+
+```env
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/sahayak?retryWrites=true&w=majority
+JWT_SECRET=replace-with-a-strong-secret
+AUTH_COOKIE_NAME=sahayak_session
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<google-oauth-client-id>
+GOOGLE_CLIENT_ID=<google-oauth-client-id>
+GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
+GOOGLE_REDIRECT_URI=https://your-app.onrender.com/api/auth/google/callback
+```
+
+Required env vars:
+
+- `MONGODB_URI` — MongoDB connection string for the production database.
+- `JWT_SECRET` — Secret used to sign auth JWTs.
+- `AUTH_COOKIE_NAME` — Optional custom auth cookie name; defaults to `sahayak_session`.
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — Browser-visible Google OAuth client ID used by client-side Google sign-in.
+- `GOOGLE_CLIENT_ID` — Server-side Google OAuth client ID used when exchanging tokens or handling OAuth redirects.
+- `GOOGLE_CLIENT_SECRET` — Server-side Google OAuth client secret.
+- `GOOGLE_REDIRECT_URI` — Fully qualified redirect URI for the Google OAuth callback route.
+
+On Render:
+
+- Deploy this repo as a Web Service.
+- Set the `Build Command` to `npm run build` and the `Start Command` to `npm run start`.
+- Add the environment variables under the service's Environment section.
+- Use your Render app URL in `GOOGLE_REDIRECT_URI`, for example `https://<your-app>.onrender.com/api/auth/google/callback`.
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the only intentionally browser-facing value; all others remain server-side only.
+
+## 9. API Conventions
 
 - All application APIs live under `/api`; this is the canonical mutation boundary. Server actions, if used, must delegate to the same services — never a second logic path.
 - Route handlers only: parse → validate → authenticate → authorize (role + ownership) → call **one** service method → map result to response. **No direct Mongoose queries in route handlers.**
