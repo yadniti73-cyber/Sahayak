@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
 import { CalendarDays, Languages, MapPin, ShieldCheck } from "lucide-react";
 import { PublicShell, Avatar, Badge, ButtonLink, Panel, Rating, SectionHeading } from "@/components";
-import { getMentorBySlug, getMentors } from "@/features/catalog/server/service";
+import { getMentorBySlug } from "@/features/catalog/server/service";
 
-export async function generateStaticParams() {
-  const mentors = await getMentors({ limit: 50 });
-  return mentors.map((mentor) => ({ slug: mentor.slug }));
-}
+export const revalidate = 300;
+export const dynamicParams = true;
 
 export default async function MentorProfilePage({ params }) {
   const { slug } = params;

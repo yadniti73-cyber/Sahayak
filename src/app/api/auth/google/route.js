@@ -1,18 +1,30 @@
 import { NextResponse } from "next/server";
-import { loginWithGoogle } from "@/features/auth/server/service";
-import { setAuthCookie } from "@/server/auth/cookies";
-import { errorResponse, successResponse } from "@/server/utils/api-response";
+import crypto from "crypto";
+import { appConfig } from "@/server/config";
 
-export async function POST(request) {
-  try {
-    const payload = await request.json();
-    const userAgent = request.headers.get("user-agent") || "";
-    const ipAddress = request.headers.get("x-forwarded-for") || "";
+// GET /api/auth/google — redirects the browser to Google's consent screen.
+export async function GET() {
+  const state = crypto.randomBytes(24).toString("hex");
 
-    const result = await loginWithGoogle(payload, { userAgent, ipAddress });
-    const response = NextResponse.json(successResponse({ user: result.user }, "Google login succeeded."));
-    return setAuthCookie(response, result.token);
-  } catch (error) {
-    return NextResponse.json(errorResponse(error.message || "Unable to login with Google."), { status: 400 });
-  }
+  const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  authUrl.searchParams.set("client_id", appConfig.google.clientId);
+  authUrl.searchParams.set("redirect_uri", appConfig.google.redirectUri);
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("scope", "openid email profile");
+  authUrl.searchParams.set("state", state);
+  authUrl.searchParams.set("prompt", "select_account");
+
+  const response = NextResponse.redirect(authUrl.toString());
+
+  response.cookies.set({
+    name: appConfig.googleOAuthStateCookieName,
+    value: state,
+    httpOnly: true,
+    secure: appConfig.env === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10, 
+  });
+
+  return response;
 }

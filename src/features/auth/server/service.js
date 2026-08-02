@@ -5,6 +5,7 @@ import { connectMongo } from "@/server/db/mongo";
 import { createUser, findUserByEmail, findUserById, updateUser } from "@/server/repositories/users";
 import { createSession, revokeSession, revokeSessionsForUser } from "@/server/auth/session";
 import { createPasswordResetToken, findPasswordResetTokenByHash, markPasswordResetTokenUsed } from "@/server/repositories/passwordResetTokens";
+import { appConfig } from "@/server/config";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -108,11 +109,12 @@ export async function logoutUser(sessionId) {
   await revokeSession(sessionId);
 }
 
-export async function loginWithGoogle(payload, { userAgent = "unknown", ipAddress = "" } = {}) {
-  const parsed = z.object({ idToken: z.string().min(1) }).parse(payload);
+// --- Replaces the old ID-token-based loginWithGoogle ---
+export async function loginWithGoogleCode(code, { userAgent = "unknown", ipAddress = "" } = {}) {
+  const parsed = z.string().min(1).parse(code);
   await connectMongo();
 
-  const googlePayload = await verifyGoogleIdToken(parsed.idToken);
+  const googlePayload = await exchangeCodeForGoogleProfile(parsed);
   const email = googlePayload.email.toLowerCase();
   let user = await findUserByEmail(email);
 
@@ -131,6 +133,10 @@ export async function loginWithGoogle(payload, { userAgent = "unknown", ipAddres
       lastName,
       role: "SEEKER",
     });
+  }
+
+  if (user.status !== "ACTIVE") {
+    throw new Error("Your account is not active.");
   }
 
   const { token, session } = await createSession({
@@ -153,6 +159,33 @@ export async function loginWithGoogle(payload, { userAgent = "unknown", ipAddres
   };
 }
 
+// Exchanges the authorization code for tokens, then verifies + returns the ID token payload.
+async function exchangeCodeForGoogleProfile(code) {
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: appConfig.google.clientId,
+      client_secret: appConfig.google.clientSecret,
+      redirect_uri: appConfig.google.redirectUri,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error("Unable to exchange Google authorization code.");
+  }
+
+  const tokenData = await tokenResponse.json();
+  const idToken = tokenData.id_token;
+  if (!idToken) {
+    throw new Error("Google did not return an ID token.");
+  }
+
+  return verifyGoogleIdToken(idToken);
+}
+
 async function verifyGoogleIdToken(idToken) {
   const validationUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`;
   const response = await fetch(validationUrl);
@@ -162,7 +195,7 @@ async function verifyGoogleIdToken(idToken) {
   }
 
   const payload = await response.json();
-  if (!payload || payload.aud !== process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+  if (!payload || payload.aud !== appConfig.google.clientId) {
     throw new Error("Google login token is invalid.");
   }
 
