@@ -38,7 +38,7 @@ export async function GET(request) {
       name: appConfig.googleOAuthStateCookieName,
       value: "",
       httpOnly: true,
-      secure: appConfig.env === "production",
+      secure: appConfig.cookieSecure,
       sameSite: "lax",
       path: "/",
       maxAge: 0,

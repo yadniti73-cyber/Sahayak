@@ -24,7 +24,7 @@ Link = https://sahayak-india.onrender.com
 | Animation | Framer Motion (reduced-motion aware) |
 | Icons | Lucide React |
 | Search (prod) | MongoDB Atlas Search over a denormalized mentor search projection |
-| Deployment | Vercel (app) + MongoDB Atlas (db); Node runtime for all DB-backed routes |
+| Deployment | Render (app) + MongoDB Atlas (db); Node runtime for all DB-backed routes |
 
 ## 2. Core Architectural Decision
 
@@ -252,7 +252,7 @@ Example `.env`:
 MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/sahayak?retryWrites=true&w=majority
 JWT_SECRET=replace-with-a-strong-secret
 AUTH_COOKIE_NAME=sahayak_session
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=<google-oauth-client-id>
+JWT_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 GOOGLE_REDIRECT_URI=https://your-app.onrender.com/api/auth/google/callback
@@ -263,8 +263,8 @@ Required env vars:
 - `MONGODB_URI` — MongoDB connection string for the production database.
 - `JWT_SECRET` — Secret used to sign auth JWTs.
 - `AUTH_COOKIE_NAME` — Optional custom auth cookie name; defaults to `sahayak_session`.
-- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — Browser-visible Google OAuth client ID used by client-side Google sign-in.
-- `GOOGLE_CLIENT_ID` — Server-side Google OAuth client ID used when exchanging tokens or handling OAuth redirects.
+- `JWT_EXPIRES_IN` — Optional JWT expiration interval; defaults to `7d`.
+- `GOOGLE_CLIENT_ID` — Server-side Google OAuth client ID used when exchanging tokens and handling OAuth redirects.
 - `GOOGLE_CLIENT_SECRET` — Server-side Google OAuth client secret.
 - `GOOGLE_REDIRECT_URI` — Fully qualified redirect URI for the Google OAuth callback route.
 
@@ -274,7 +274,7 @@ On Render:
 - Set the `Build Command` to `npm run build` and the `Start Command` to `npm run start`.
 - Add the environment variables under the service's Environment section.
 - Use your Render app URL in `GOOGLE_REDIRECT_URI`, for example `https://<your-app>.onrender.com/api/auth/google/callback`.
-- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the only intentionally browser-facing value; all others remain server-side only.
+- Do not expose any Google secrets in browser-facing env variables.
 
 ## 9. API Conventions
 
