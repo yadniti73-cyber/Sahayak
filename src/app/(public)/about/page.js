@@ -6,9 +6,9 @@ export default function AboutPage() {
       <section className="bg-white py-12">
         <div className="app-container grid gap-10 lg:grid-cols-[1fr_0.8fr]">
           <SectionHeading
-            eyebrow="About Sahayak"
+            eyebrow="About GuideShala"
             title="Built around one simple belief: people need people."
-            description="Sahayak exists to make experienced guidance accessible for students, farmers, parents, patients, founders, artists, and anyone facing a meaningful decision."
+            description="GuideShala exists to make experienced guidance accessible for students, farmers, parents, patients, founders, artists, and anyone facing a meaningful decision."
           />
           <Panel>
             <h2 className="text-xl font-bold">Platform principles</h2>

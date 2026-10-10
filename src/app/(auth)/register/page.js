@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("SEEKER");
   const [error, setError] = useState("");
@@ -49,7 +50,7 @@ export default function RegisterPage() {
         <div className="app-container grid gap-8 lg:grid-cols-[0.9fr_1fr]">
           <SectionHeading
             eyebrow="Create account"
-            title="Join Sahayak as a seeker or mentor"
+            title="Join GuideShala as a seeker or mentor"
             description="Sign up to save mentors, request sessions, and manage your guidance journey."
           />
           <Panel>
@@ -86,16 +87,22 @@ export default function RegisterPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-semibold">
-                  Email
+                  Email/Phone
                   <input
                     className="app-input"
-                    placeholder="you@example.com"
                     type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    value={email || phone}
+                    onChange={(event) => {
+                      if (event.target.type === "email") {
+                        setEmail(event.target.value);
+                      } else {
+                        setPhone(event.target.value);
+                      }
+                    }}
                     required
                   />
                 </label>
+
                 <label className="grid gap-2 text-sm font-semibold">
                   Password
                   <input
@@ -108,17 +115,7 @@ export default function RegisterPage() {
                   />
                 </label>
               </div>
-              <label className="grid gap-2 text-sm font-semibold">
-                Role
-                <select
-                  className="app-input"
-                  value={role}
-                  onChange={(event) => setRole(event.target.value)}
-                >
-                  <option value="SEEKER">Seeker</option>
-                  <option value="MENTOR">Mentor</option>
-                </select>
-              </label>
+
               {error ? <p className="text-sm text-red-600">{error}</p> : null}
               <button type="submit" className="app-button w-full" disabled={loading}>
                 {loading ? "Creating account…" : "Create account"}

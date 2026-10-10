@@ -2,13 +2,16 @@ import { Bell, CalendarDays, CheckCircle2, Heart, ShieldCheck, TrendingUp, Users
 import { adminRows, bookings, categories, mentors, notifications } from "@/lib/frontend-data";
 import { Badge, ButtonLink, CheckItem, Panel, ProgressBar, SectionHeading, StatCard } from "./app-primitives";
 import { BookingCard, CategoryCard, MentorCard, SimpleTable } from "./domain-cards";
+import { Reveal } from "./Reveal";
 
 export function PublicPageIntro({ eyebrow, title, description, children }) {
   return (
-    <section className="border-b border-app-border bg-white py-12">
-      <div className="app-container">
-        <SectionHeading eyebrow={eyebrow} title={title} description={description} />
-        {children ? <div className="mt-8">{children}</div> : null}
+    <section className="relative overflow-hidden border-b border-app-border bg-gradient-to-br from-white via-blue-50/60 to-green-50/50 py-12">
+      <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 animate-float-slow rounded-full bg-blue-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 right-0 h-64 w-64 animate-float-slow rounded-full bg-green-200/40 blur-3xl [animation-delay:2s]" />
+      <div className="app-container relative">
+        <SectionHeading as="h1" eyebrow={eyebrow} title={title} description={description} />
+        {children ? <Reveal delay={150} className="mt-8">{children}</Reveal> : null}
       </div>
     </section>
   );
@@ -17,8 +20,10 @@ export function PublicPageIntro({ eyebrow, title, description, children }) {
 export function MentorGrid({ items = mentors }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {items.map((mentor) => (
-        <MentorCard key={mentor.slug} mentor={mentor} />
+      {items.map((mentor, i) => (
+        <Reveal key={mentor.slug} delay={(i % 2) * 100}>
+          <MentorCard mentor={mentor} />
+        </Reveal>
       ))}
     </div>
   );
@@ -27,8 +32,10 @@ export function MentorGrid({ items = mentors }) {
 export function CategoryGrid({ items = categories }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {items.map((category) => (
-        <CategoryCard key={category.slug} category={category} />
+      {items.map((category, i) => (
+        <Reveal key={category.slug} delay={(i % 4) * 80}>
+          <CategoryCard category={category} />
+        </Reveal>
       ))}
     </div>
   );

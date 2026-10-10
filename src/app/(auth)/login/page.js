@@ -113,7 +113,7 @@ export default function LoginPage() {
                 {loading ? "Signing in…" : "Sign in"}
               </button>
               <p className="text-center text-sm text-app-muted">
-                New to Sahayak? <Link href="/register" className="font-semibold text-app-primary">Create account</Link>
+                New to GuideShala? <Link href="/register" className="font-semibold text-app-primary">Create account</Link>
               </p>
             </form>
           </Panel>

@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
           <SectionHeading
             eyebrow="Password recovery"
             title="Reset access without losing your path"
-            description="Enter the email linked to your Sahayak account. The reset flow is designed to invalidate old sessions securely."
+            description="Enter the email linked to your GuideShala account. The reset flow is designed to invalidate old sessions securely."
           />
           <Panel>
             <form className="grid gap-4" onSubmit={handleSubmit}>

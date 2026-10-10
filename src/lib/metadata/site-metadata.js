@@ -1,4 +1,4 @@
-const APP_NAME = "Sahayak";
+const APP_NAME = "GuideShala";
 const APP_DESCRIPTION =
   "Find trusted mentors, request guidance, and build long-term support.";
 

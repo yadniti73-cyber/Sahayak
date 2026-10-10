@@ -15,7 +15,7 @@ export function PublicFooter({ children, className = "" }) {
     <footer className={`border-t border-app-border bg-white ${className}`}>
       <div className="app-container grid gap-8 py-10 md:grid-cols-[1.5fr_2fr]">
         <div>
-          <Link href="/" className="text-xl font-bold text-app-primary">Sahayak</Link>
+          <Link href="/" className="text-xl font-bold text-app-primary">GuideShala</Link>
           <p className="mt-3 max-w-md text-sm leading-6 text-app-muted">
             A trusted mentorship ecosystem for people who need clarity, confidence, and human guidance.
           </p>
@@ -36,7 +36,7 @@ export function PublicFooter({ children, className = "" }) {
         </div>
       </div>
       <div className="border-t border-app-border py-4 text-center text-xs text-app-muted">
-        © {new Date().getFullYear()} Sahayak. Built for meaningful guidance.
+        © {new Date().getFullYear()} GuideShala. Built for meaningful guidance.
       </div>
     </footer>
   );

@@ -1,9 +1,9 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Sahayak | Find trusted guidance",
+  title: "GuideShala | Find trusted guidance",
   description:
-    "Sahayak helps seekers discover verified mentors, request guidance, and manage long-term mentorship relationships.",
+    "GuideShala helps seekers discover verified mentors, request guidance, and manage long-term mentorship relationships.",
 };
 
 export default function RootLayout({ children }) {

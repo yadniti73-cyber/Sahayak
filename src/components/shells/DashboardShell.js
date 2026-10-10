@@ -39,7 +39,7 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
       <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
         <aside className="hidden border-r border-app-border bg-white lg:block">
           <div className="flex h-16 items-center border-b border-app-border px-5">
-            <Link href="/" className="text-xl font-bold text-app-primary">Sahayak</Link>
+            <Link href="/" className="text-xl font-bold text-app-primary">GuideShala</Link>
           </div>
           <nav className="grid gap-1 p-4" aria-label={`${role} navigation`}>
             {navItems.map((item) => {

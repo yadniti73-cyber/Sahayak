@@ -7,7 +7,7 @@ export default function DashboardPage() {
         <SectionHeading
           eyebrow="Dashboard"
           title="Pick up where you left off"
-          description="Sahayak will route authenticated users by role. This frontend preview shows the available workspaces."
+          description="GuideShala will route authenticated users by role. This frontend preview shows the available workspaces."
         />
         <div className="grid gap-4 md:grid-cols-3">
           {[

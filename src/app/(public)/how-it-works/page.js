@@ -26,8 +26,8 @@ export default function HowItWorksPage() {
               </Panel>
             ))}
           </div>
-          <div className="mt-8">
-            <ButtonLink href="/mentors">Find a mentor</ButtonLink>
+          <div className="mt-10 text-center font-semibold text-5xl">
+            <ButtonLink href="/mentors">Find a Guide</ButtonLink>
           </div>
         </div>
       </section>

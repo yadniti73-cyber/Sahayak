@@ -41,22 +41,22 @@ export function CategoryCard({ category }) {
   return (
     <Link href={`/category/${category.slug}`} className="app-card group block p-5 transition hover:-translate-y-1 hover:shadow-soft">
       <div className="flex items-center gap-4">
-        <span className="rounded-lg bg-blue-50 p-3 text-app-primary">
+        <span className="rounded-lg bg-gradient-to-br from-blue-50 to-green-50 p-3 text-app-primary transition-transform duration-300 group-hover:scale-110">
           <Icon size={22} aria-hidden="true" />
         </span>
         <div>
-          <h3 className="font-semibold text-app-text">{category.name}</h3>
-          <p className="text-sm text-app-muted">{(category.mentorCount || 0).toLocaleString()} mentors</p>
+          <h3 className="font-bold text-lg">{category.name}</h3>
+          <p className="text-md text-app-muted">{(category.mentorCount || 0).toLocaleString()} mentors</p>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-6 text-app-muted">{category.description}</p>
+      <p className="mt-4 text-md leading-6 text-app-muted">{category.description}</p>
     </Link>
   );
 }
 
 export function MentorCard({ mentor, compact = false }) {
   return (
-    <article className="app-card p-5 transition hover:-translate-y-1 hover:shadow-soft">
+    <article className="app-card h-full border-t-2 border-t-green-500/60 p-5 transition duration-300 hover:-translate-y-1 hover:shadow-soft">
       <div className="flex gap-4">
         <Avatar initials={mentor.initials} />
         <div className="min-w-0 flex-1">
@@ -115,7 +115,7 @@ export function SimpleTable({ headers, rows }) {
   return (
     <div className="app-card overflow-hidden">
       <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-app-muted">
+        <thead className="bg-gradient-to-r from-blue-50 to-green-50 text-xs uppercase text-app-muted">
           <tr>
             {headers.map((header) => (
               <th key={header} className="px-4 py-3 font-semibold">{header}</th>
@@ -124,7 +124,7 @@ export function SimpleTable({ headers, rows }) {
         </thead>
         <tbody className="divide-y divide-app-border">
           {rows.map((row) => (
-            <tr key={row.join("-")} className="bg-white">
+            <tr key={row.join("-")} className="bg-white transition-colors hover:bg-blue-50/50">
               {row.map((cell) => (
                 <td key={cell} className="px-4 py-4 text-app-muted">{cell}</td>
               ))}

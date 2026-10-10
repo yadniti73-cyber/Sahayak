@@ -13,3 +13,7 @@ export {
   StatCard,
 } from "./app-primitives";
 export { BookingCard, CategoryCard, MentorCard, SimpleTable } from "./domain-cards";
+export { Reveal } from "./Reveal";
+export { LazySection } from "./LazySection";
+export { DynamicHeading } from "./DynamicHeading";
+export { FeedbackForm } from "./FeedbackForm";

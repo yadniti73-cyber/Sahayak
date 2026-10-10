@@ -1,10 +1,10 @@
-# Sahayak
+# GuideShala
 
-Sahayak is a mentorship marketplace platform that connects **seekers** (people looking for guidance) with **mentors** (verified experts across categories), with an **admin** layer for moderation, verification, and platform operations. The product covers mentor discovery/search, mentor public profiles, a booking lifecycle (request → confirm → complete → review), role-aware dashboards, and in-app notifications.
+GuideShala is a mentorship marketplace platform that connects **seekers** (people looking for guidance) with **mentors** (verified experts across categories), with an **admin** layer for moderation, verification, and platform operations. The product covers mentor discovery/search, mentor public profiles, a booking lifecycle (request → confirm → complete → review), role-aware dashboards, and in-app notifications.
 
 This README is the single entry point for engineers picking up this repo. It summarizes the approved architecture, database design, authentication design, and folder structure so implementation can proceed without re-deriving decisions already made. The full source documents this is distilled from live in [`docs/`](./docs).
 
-Link = https://sahayak-india.onrender.com
+Link = https://GuideShala-india.onrender.com
 > This is a fresh scaffold: folders exist per the approved structure, but application code has not been written yet. Build order is defined in [§9](#9-recommended-build-order).
 
 ---
@@ -28,7 +28,7 @@ Link = https://sahayak-india.onrender.com
 
 ## 2. Core Architectural Decision
 
-Sahayak is built as a **modular monolith**:
+GuideShala is built as a **modular monolith**:
 
 - One Next.js App Router application
 - One MongoDB Atlas database
@@ -173,7 +173,7 @@ Hard rules:
 
 **Public export rule:** consumers import from `@/features/<feature>` or `@/features/<feature>/server`, never `@/features/<feature>/components/some-internal-file`.
 
-Full folder-by-folder responsibilities and import rules: [`docs/sahayak-folder-structure.md`](./docs/sahayak-folder-structure.md).
+Full folder-by-folder responsibilities and import rules: [`docs/GuideShala-folder-structure.md`](./docs/GuideShala-folder-structure.md).
 
 ## 6. Database Architecture (MongoDB + Mongoose)
 
@@ -225,7 +225,7 @@ Mentor registration (user + profile + session), booking create, booking accept/r
 Soft-delete: `users`, `mentorProfiles`, `categories`.
 Never soft-delete (transactional/evidence records): `bookings`, `bookingEvents`, `reviews`, `favorites`, `notifications`, `auditLogs`, `verificationSubmissions`.
 
-Full schema fields, indexes, and aggregation strategy: [`docs/sahayak-mongodb-architecture.md`](./docs/sahayak-mongodb-architecture.md).
+Full schema fields, indexes, and aggregation strategy: [`docs/GuideShala-mongodb-architecture.md`](./docs/GuideShala-mongodb-architecture.md).
 
 ## 7. Authentication & Authorization
 
@@ -240,18 +240,18 @@ Full schema fields, indexes, and aggregation strategy: [`docs/sahayak-mongodb-ar
 - **Account protection:** failed-login counter, temporary lockout after 5 failed attempts, audit log on login success/failure/logout/reset/role change/admin action.
 - **Client boundary:** the browser never parses or stores the raw JWT; client code only ever sees a sanitized viewer model (id, name, role, avatar — never secrets).
 
-Full flow diagrams, helper function signatures, and API auth rules: [`docs/sahayak-authentication-architecture.md`](./docs/sahayak-authentication-architecture.md).
+Full flow diagrams, helper function signatures, and API auth rules: [`docs/GuideShala-authentication-architecture.md`](./docs/GuideShala-authentication-architecture.md).
 
 ## 8. Environment Variables
 
-Sahayak depends on environment variables for production configuration. Do not commit real secrets to source control. The values below are examples only.
+GuideShala depends on environment variables for production configuration. Do not commit real secrets to source control. The values below are examples only.
 
 Example `.env`:
 
 ```env
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/sahayak?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/GuideShala?retryWrites=true&w=majority
 JWT_SECRET=replace-with-a-strong-secret
-AUTH_COOKIE_NAME=sahayak_session
+AUTH_COOKIE_NAME=GuideShala_session
 JWT_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
@@ -262,7 +262,7 @@ Required env vars:
 
 - `MONGODB_URI` — MongoDB connection string for the production database.
 - `JWT_SECRET` — Secret used to sign auth JWTs.
-- `AUTH_COOKIE_NAME` — Optional custom auth cookie name; defaults to `sahayak_session`.
+- `AUTH_COOKIE_NAME` — Optional custom auth cookie name; defaults to `GuideShala_session`.
 - `JWT_EXPIRES_IN` — Optional JWT expiration interval; defaults to `7d`.
 - `GOOGLE_CLIENT_ID` — Server-side Google OAuth client ID used when exchanging tokens and handling OAuth redirects.
 - `GOOGLE_CLIENT_SECRET` — Server-side Google OAuth client secret.
@@ -315,7 +315,7 @@ On Render:
 
 ## 11. Open Product Decisions
 
-Still need explicit sign-off before/while building the related feature — see `docs/sahayak-architecture.md` §20 for the full list. Notable ones:
+Still need explicit sign-off before/while building the related feature — see `docs/GuideShala-architecture.md` §20 for the full list. Notable ones:
 
 - V1 session modes: `VIDEO` + `IN_PERSON` only?
 - Media storage provider for avatars/verification docs
@@ -330,9 +330,9 @@ Until confirmed, the architecture docs define the safest buildable defaults, and
 
 The full, unabridged versions of everything summarized above:
 
-- [`docs/sahayak-architecture.md`](./docs/sahayak-architecture.md) — system architecture, modules, dependency rules, caching, security, deployment
-- [`docs/sahayak-folder-structure.md`](./docs/sahayak-folder-structure.md) — canonical folder tree, import rules, anti-patterns
-- [`docs/sahayak-mongodb-architecture.md`](./docs/sahayak-mongodb-architecture.md) — full schema fields, indexes, aggregation and search strategy
-- [`docs/sahayak-authentication-architecture.md`](./docs/sahayak-authentication-architecture.md) — full auth/authz flows, middleware design, helper contracts
+- [`docs/GuideShala-architecture.md`](./docs/GuideShala-architecture.md) — system architecture, modules, dependency rules, caching, security, deployment
+- [`docs/GuideShala-folder-structure.md`](./docs/GuideShala-folder-structure.md) — canonical folder tree, import rules, anti-patterns
+- [`docs/GuideShala-mongodb-architecture.md`](./docs/GuideShala-mongodb-architecture.md) — full schema fields, indexes, aggregation and search strategy
+- [`docs/GuideShala-authentication-architecture.md`](./docs/GuideShala-authentication-architecture.md) — full auth/authz flows, middleware design, helper contracts
 
 ---
