@@ -41,7 +41,7 @@ export function Hero() {
             <ButtonLink href="/register" className="px-7 text-lg shadow-soft">
               Contact a Guide
             </ButtonLink>
-            <ButtonLink href="/register" variant="green" className="px-7 text-lg">
+            <ButtonLink href="/register?role=mentor" variant="green" className="px-7 text-lg">
               Join as Guide
             </ButtonLink>
           </Reveal>

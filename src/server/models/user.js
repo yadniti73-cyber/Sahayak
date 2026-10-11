@@ -35,9 +35,10 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-UserSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
+// One account per Google identity. Partial index so local users (providerId null) are not affected.
+UserSchema.index(
+  { provider: 1, providerId: 1 },
+  { unique: true, partialFilterExpression: { providerId: { $type: "string" } } }
+);
 
 export const User = mongoose.models.User || mongoose.model("User", UserSchema);

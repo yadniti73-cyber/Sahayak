@@ -1,7 +1,9 @@
-import { Mail, MapPin, Phone } from "lucide-react";
-import { PublicShell, Panel, SectionHeading, Reveal } from "@/components";
+import Link from "next/link";
+import { HeartHandshake, LifeBuoy, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { PublicShell, Panel } from "@/components";
 import { ContactForm } from "@/components/ContactForm";
-import { HeroIconBackdrop } from "@/components/HeroIconBackdrop";
+import { PageHero, Section } from "@/components/PageHero";
+import { Reveal } from "@/components/Reveal";
 
 // Placeholder details: replace with your real email, phone and city.
 const details = [
@@ -10,33 +12,51 @@ const details = [
   { Icon: MapPin, label: "Based in", value: "India" },
 ];
 
+const reasons = [
+  [HeartHandshake, "Partnerships", "NGOs, FPOs, colleges, community centres and companies that want to bring guidance to their people."],
+  [ShieldCheck, "Mentor verification", "Questions about documents, the Verified badge or the status of your guide profile."],
+  [LifeBuoy, "Support", "Trouble with an account, a booking or a session. Include the guide's name if there is one."],
+];
+
+const links = [
+  ["/faq", "Read the FAQ", "Quick answers on booking, trust and accounts."],
+  ["/how-it-works", "See how it works", "The full path from search to session."],
+  ["/register", "Join as a guide", "Create a profile and start the verification."],
+];
+
 export default function ContactPage() {
   return (
     <PublicShell>
-      <section className="relative overflow-hidden border-b border-app-border bg-gradient-to-br from-white via-blue-50/60 to-green-50/50 py-12 lg:py-16">
-        <HeroIconBackdrop />
-        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl float-slow" />
-        <div className="pointer-events-none absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-green-200/40 blur-3xl float-slow" />
+      <PageHero
+        eyebrow="Contact"
+        title="Reach the GuideShala"
+        highlight="team"
+        description="For partnerships, verification support, or platform questions, send a note and the team will respond with next steps."
+        aside={
+          <Panel className="shadow-soft">
+            <ContactForm />
+          </Panel>
+        }
+      />
 
-        <div className="app-container relative grid items-center gap-8 lg:grid-cols-[1fr_0.8fr]">
-          <Reveal>
-            <SectionHeading
-              eyebrow="Contact"
-              title="Reach the GuideShala"
-              highlight="team"
-              description="For partnerships, verification support, or platform questions, send a note and the team will respond with next steps."
-            />
-          </Reveal>
-          <Reveal delay={150}>
-            <Panel className="shadow-soft">
-              <ContactForm />
-            </Panel>
-          </Reveal>
+      <Section tone="blue" eyebrow="Write to us about" title="What we can" highlight="help with">
+        <div className="grid gap-4 md:grid-cols-3">
+          {reasons.map(([Icon, title, text], i) => (
+            <Reveal key={title} delay={i * 110}>
+              <Panel className="group h-full transition duration-200 hover:-translate-y-1 hover:shadow-soft">
+                <span className="inline-flex rounded-lg bg-blue-50 p-3 text-app-primary transition group-hover:bg-green-50 group-hover:text-green-600">
+                  <Icon size={22} aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 text-lg font-bold">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-app-muted">{text}</p>
+              </Panel>
+            </Reveal>
+          ))}
         </div>
-      </section>
+      </Section>
 
-      <section className="bg-gradient-to-b from-white to-green-50/50 py-12">
-        <div className="app-container grid gap-4 md:grid-cols-3">
+      <Section eyebrow="Direct" title="Other ways to" highlight="reach us">
+        <div className="grid gap-4 md:grid-cols-3">
           {details.map(({ Icon, label, value, href }, i) => (
             <Reveal key={label} delay={i * 110}>
               <Panel className="group h-full transition duration-200 hover:-translate-y-1 hover:shadow-soft">
@@ -45,9 +65,7 @@ export default function ContactPage() {
                 </span>
                 <p className="mt-4 text-xs font-bold uppercase tracking-wide text-green-700">{label}</p>
                 {href ? (
-                  <a href={href} className="mt-1 block font-semibold text-app-text hover:text-app-primary">
-                    {value}
-                  </a>
+                  <a href={href} className="mt-1 block font-semibold text-app-text hover:text-app-primary">{value}</a>
                 ) : (
                   <p className="mt-1 font-semibold text-app-text">{value}</p>
                 )}
@@ -55,7 +73,20 @@ export default function ContactPage() {
             </Reveal>
           ))}
         </div>
-      </section>
+      </Section>
+
+      <Section tone="green" eyebrow="Before you write" title="You may find your answer" highlight="faster here">
+        <div className="grid gap-4 md:grid-cols-3">
+          {links.map(([href, title, text], i) => (
+            <Reveal key={href} delay={i * 110}>
+              <Link href={href} className="app-card group block h-full p-5 transition duration-200 hover:-translate-y-1 hover:shadow-soft">
+                <h3 className="font-semibold text-app-text transition group-hover:text-green-700">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-app-muted">{text}</p>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
     </PublicShell>
   );
 }

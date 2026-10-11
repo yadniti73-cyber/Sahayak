@@ -3,8 +3,10 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PublicShell, Panel, SectionHeading } from "@/components";
+import { PublicShell, CheckItem, Panel } from "@/components";
+import { PageHero } from "@/components/PageHero";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { FormAlert, OrDivider, PasswordField, SubmitButton } from "@/components/auth-fields";
 
 const GOOGLE_ERROR_MESSAGES = {
   google_auth_denied: "Google sign-in was cancelled.",
@@ -12,18 +14,17 @@ const GOOGLE_ERROR_MESSAGES = {
   google_auth_failed: "Unable to sign in with Google. Please try again.",
 };
 
-function GoogleAuthError() {
+function LoginNotices() {
   const searchParams = useSearchParams();
-  const googleErrorCode = searchParams.get("error");
-  const googleError = googleErrorCode
-    ? GOOGLE_ERROR_MESSAGES[googleErrorCode] || "Unable to sign in with Google."
-    : "";
+  const code = searchParams.get("error");
 
-  if (!googleError) {
-    return null;
+  if (code) {
+    return <FormAlert>{GOOGLE_ERROR_MESSAGES[code] || "Unable to sign in with Google."}</FormAlert>;
   }
-
-  return <p className="mt-2 text-sm text-red-600">{googleError}</p>;
+  if (searchParams.get("reset") === "1") {
+    return <FormAlert type="success">Password updated. Sign in with your new password.</FormAlert>;
+  }
+  return null;
 }
 
 export default function LoginPage() {
@@ -54,6 +55,7 @@ export default function LoginPage() {
       }
 
       router.push("/dashboard/home");
+      router.refresh();
     } catch (err) {
       setError("Unable to sign in. Please try again.");
       setLoading(false);
@@ -62,63 +64,61 @@ export default function LoginPage() {
 
   return (
     <PublicShell>
-      <section className="py-12">
-        <div className="app-container grid gap-8 lg:grid-cols-[0.9fr_1fr]">
-          <SectionHeading
-            eyebrow="Welcome back"
-            title="Continue your guidance journey"
-            description="Sign in to manage bookings, save mentors, view notifications, and return to your dashboard."
-          />
-          <Panel>
+      <PageHero
+        eyebrow="Welcome back"
+        title="Continue your guidance"
+        highlight="journey"
+        description="Sign in to manage bookings, save mentors, view notifications, and return to your dashboard."
+        aside={
+          <Panel className="shadow-soft">
             <div className="grid gap-4">
-              <GoogleAuthButton />
               <Suspense fallback={null}>
-                <GoogleAuthError />
+                <LoginNotices />
               </Suspense>
-            </div>
-            <form className="grid gap-4" onSubmit={handleSubmit}>
-              <label className="grid gap-2 text-sm font-semibold">
-                Email
-                <input
-                  className="app-input"
-                  placeholder="you@example.com"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-semibold">
-                Password
-                <input
-                  className="app-input"
+              <GoogleAuthButton />
+              <OrDivider />
+              <form className="grid gap-4" onSubmit={handleSubmit}>
+                <label className="grid gap-2 text-sm font-semibold text-app-text">
+                  Email
+                  <input
+                    className="app-input"
+                    placeholder="you@example.com"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </label>
+                <PasswordField
+                  label="Password"
                   placeholder="Enter password"
-                  type="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  required
                 />
-              </label>
-              <div className="flex items-center justify-between gap-4 text-sm">
-                <label className="flex items-center gap-2 text-app-muted">
-                  <input type="checkbox" className="h-4 w-4 rounded border-app-border" />
-                  Remember me
-                </label>
-                <Link href="/forgot-password" className="font-semibold text-app-primary">
-                  Forgot password?
-                </Link>
-              </div>
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              <button type="submit" className="app-button w-full" disabled={loading}>
-                {loading ? "Signing in…" : "Sign in"}
-              </button>
-              <p className="text-center text-sm text-app-muted">
-                New to GuideShala? <Link href="/register" className="font-semibold text-app-primary">Create account</Link>
-              </p>
-            </form>
+                <div className="text-right text-sm">
+                  <Link href="/forgot-password" className="font-semibold text-app-primary hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <FormAlert>{error}</FormAlert>
+                <SubmitButton loading={loading} loadingText="Signing in...">Sign in</SubmitButton>
+                <p className="text-center text-sm text-app-muted">
+                  New to GuideShala?{" "}
+                  <Link href="/register" className="font-semibold text-green-700 hover:underline">Create account</Link>
+                </p>
+              </form>
+            </div>
           </Panel>
+        }
+      >
+        <div className="grid max-w-md gap-3">
+          <CheckItem>Manage bookings and upcoming sessions.</CheckItem>
+          <CheckItem>Save mentors you want to talk to again.</CheckItem>
+          <CheckItem>See notifications from your guides.</CheckItem>
         </div>
-      </section>
+      </PageHero>
     </PublicShell>
   );
 }

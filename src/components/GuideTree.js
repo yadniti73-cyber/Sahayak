@@ -1,17 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { BadgeCheck, CalendarCheck, Heart, LockKeyhole, MapPinned, MessageCircle, ShieldCheck } from "lucide-react";
 
+// Icon tiles instead of photos: no image files needed, so nothing can 404.
 const branches = [
-  { label: "Verified mentors", image: "/images/guide/verified-mentors.jpg" },
-  { label: "Secure booking", image: "/images/guide/secure-booking.jpg" },
-  { label: "Nationwide access", image: "/images/guide/nationwide-access.jpg" },
-  { label: "Human conversations", image: "/images/guide/human-conversations.jpg" },
-  { label: "Verified experts", image: "/images/guide/verified-experts.jpg" },
-  { label: "Simple booking", image: "/images/guide/simple-booking.jpg" },
-  { label: "Human guidance", image: "/images/guide/human-guidance.jpg" },
+  { label: "Verified mentors", Icon: ShieldCheck, tone: "blue" },
+  { label: "Secure booking", Icon: LockKeyhole, tone: "green" },
+  { label: "Nationwide access", Icon: MapPinned, tone: "blue" },
+  { label: "Human conversations", Icon: MessageCircle, tone: "green" },
+  { label: "Verified experts", Icon: BadgeCheck, tone: "blue" },
+  { label: "Simple booking", Icon: CalendarCheck, tone: "green" },
+  { label: "Human guidance", Icon: Heart, tone: "blue" },
 ];
+
+const tones = {
+  blue: "from-blue-500 to-blue-700",
+  green: "from-green-500 to-green-700",
+};
 
 const RADIUS = 39; // % of container, center -> node distance
 const TILT = 22; // max tilt in degrees
@@ -28,7 +34,7 @@ const nodes = branches.map((branch, i) => {
 
 const REST = "perspective(700px) rotateX(0deg) rotateY(0deg) translateZ(0px)";
 
-function TiltCard({ label, image }) {
+function TiltCard({ label, Icon, tone }) {
   const [transform, setTransform] = useState(REST);
   const [hovering, setHovering] = useState(false);
 
@@ -52,7 +58,7 @@ function TiltCard({ label, image }) {
       onMouseEnter={() => setHovering(true)}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className={`app-card overflow-hidden motion-reduce:!transform-none ${
+      className={`app-card overflow-hidden bg-white motion-reduce:!transform-none ${
         hovering ? "shadow-soft" : ""
       }`}
       style={{
@@ -64,19 +70,15 @@ function TiltCard({ label, image }) {
         willChange: "transform",
       }}
     >
-      <div className="relative h-14 w-full bg-slate-100 sm:h-20">
-        <Image
-          src={image}
-          alt={label}
-          loading="lazy"
-          fill
-          sizes="(min-width: 640px) 144px, 96px"
-          className={`object-cover transition-transform duration-500 ${
-            hovering ? "scale-110" : "scale-100"
+      <div className={`flex h-14 w-full items-center justify-center bg-gradient-to-br ${tones[tone]} sm:h-20`}>
+        <Icon
+          aria-hidden="true"
+          className={`h-6 w-6 text-white transition-transform duration-500 sm:h-9 sm:w-9 ${
+            hovering ? "scale-125" : "scale-100"
           }`}
         />
       </div>
-      <p className="p-2 text-center text-[11px] font-semibold leading-tight sm:text-sm">
+      <p className="p-2 text-center text-[11px] font-semibold leading-tight text-app-text sm:text-sm">
         {label}
       </p>
     </div>
@@ -107,20 +109,20 @@ export function GuideTree() {
       </svg>
 
       {/* Center */}
-      <div className="absolute left-1/2 top-1/2 z-10 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-app-primary p-2 text-center shadow-soft sm:h-32 sm:w-32">
+      <div className="absolute left-1/2 top-1/2 z-10 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-app-primary to-green-600 p-2 text-center shadow-soft sm:h-32 sm:w-32">
         <span className="font-display text-base font-semibold text-white sm:text-xl">
           Guideshala
         </span>
       </div>
 
       {/* Branches: outer div positions, inner TiltCard does the 3D */}
-      {nodes.map(({ label, image, x, y }) => (
+      {nodes.map(({ label, Icon, tone, x, y }) => (
         <div
           key={label}
           className="absolute z-10 w-24 -translate-x-1/2 -translate-y-1/2 hover:z-20 sm:w-36"
           style={{ left: `${x}%`, top: `${y}%` }}
         >
-          <TiltCard label={label} image={image} />
+          <TiltCard label={label} Icon={Icon} tone={tone} />
         </div>
       ))}
     </div>

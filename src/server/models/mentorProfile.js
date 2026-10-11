@@ -29,10 +29,7 @@ const MentorProfileSchema = new mongoose.Schema(
 );
 
 MentorProfileSchema.index({ category: 1, active: 1 });
-
-MentorProfileSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
+// One profile per mentor account.
+MentorProfileSchema.index({ userId: 1 }, { unique: true });
 
 export const MentorProfile = mongoose.models.MentorProfile || mongoose.model("MentorProfile", MentorProfileSchema);

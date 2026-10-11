@@ -44,13 +44,13 @@ export function Panel({ children, className = "" }) {
 
 // `highlight` is rendered in the blue-to-green gradient after `title`.
 // Use as="h2" for any heading that is not the page's main title.
-export function SectionHeading({ eyebrow, title, highlight, description, align = "left", as: Tag = "h1" }) {
+export function SectionHeading({ eyebrow, title, highlight, description, align = "left", as: Tag = "h1", size = "lg" }) {
   return (
     <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
       {eyebrow ? (
         <p className="text-sm font-semibold uppercase tracking-wide text-green-700">{eyebrow}</p>
       ) : null}
-      <Tag className="mt-3 font-display text-4xl font-semibold leading-tight text-app-text sm:text-5xl">
+      <Tag className={`mt-3 font-display font-semibold leading-tight text-app-text ${size === "sm" ? "text-3xl sm:text-4xl" : "text-4xl sm:text-5xl"}`}>
         {title}
         {highlight ? (
           <>

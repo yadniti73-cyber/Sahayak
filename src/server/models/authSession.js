@@ -17,9 +17,8 @@ const AuthSessionSchema = new mongoose.Schema(
   }
 );
 
-AuthSessionSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
+AuthSessionSchema.index({ userId: 1 });
+// Remove session records 30 days after they expire.
+AuthSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
 
 export const AuthSession = mongoose.models.AuthSession || mongoose.model("AuthSession", AuthSessionSchema);

@@ -7,7 +7,7 @@ import { appConfig } from "@/server/config";
 
 export async function getCurrentUser() {
   await connectMongo();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(appConfig.authCookieName)?.value;
 
   if (!token) {

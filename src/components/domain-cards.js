@@ -27,13 +27,24 @@ const iconMap = {
   BookOpen,
 };
 
-const statusTone = {
-  Confirmed: "green",
-  Requested: "amber",
-  Completed: "blue",
-  Cancelled: "gray",
-  Rejected: "red",
+// Database values are upper-case (REQUESTED, IN_PERSON...); mock data uses Title case.
+const statusMeta = {
+  REQUESTED: ["Requested", "amber"],
+  CONFIRMED: ["Confirmed", "green"],
+  COMPLETED: ["Completed", "blue"],
+  CANCELLED: ["Cancelled", "gray"],
+  REJECTED: ["Rejected", "red"],
+  RESCHEDULE_REQUESTED: ["Reschedule requested", "amber"],
+  NO_SHOW: ["No show", "red"],
+  CLOSED: ["Closed", "gray"],
 };
+
+export function statusInfo(status) {
+  const key = String(status || "").toUpperCase().replace(/\s+/g, "_");
+  return statusMeta[key] || [status || "Unknown", "gray"];
+}
+
+export const modeLabel = { VIDEO: "Video", PHONE: "Phone", IN_PERSON: "In person" };
 
 export function CategoryCard({ category }) {
   const Icon = iconMap[category.icon] || BookOpen;
@@ -41,22 +52,22 @@ export function CategoryCard({ category }) {
   return (
     <Link href={`/category/${category.slug}`} className="app-card group block p-5 transition hover:-translate-y-1 hover:shadow-soft">
       <div className="flex items-center gap-4">
-        <span className="rounded-lg bg-gradient-to-br from-blue-50 to-green-50 p-3 text-app-primary transition-transform duration-300 group-hover:scale-110">
+        <span className="rounded-lg bg-blue-50 p-3 text-app-primary transition group-hover:bg-green-50 group-hover:text-green-600">
           <Icon size={22} aria-hidden="true" />
         </span>
         <div>
-          <h3 className="font-bold text-lg">{category.name}</h3>
-          <p className="text-md text-app-muted">{(category.mentorCount || 0).toLocaleString()} mentors</p>
+          <h3 className="font-semibold text-app-text">{category.name}</h3>
+          <p className="text-sm text-app-muted">{(category.mentorCount || 0).toLocaleString()} mentors</p>
         </div>
       </div>
-      <p className="mt-4 text-md leading-6 text-app-muted">{category.description}</p>
+      <p className="mt-4 text-sm leading-6 text-app-muted">{category.description}</p>
     </Link>
   );
 }
 
 export function MentorCard({ mentor, compact = false }) {
   return (
-    <article className="app-card h-full border-t-2 border-t-green-500/60 p-5 transition duration-300 hover:-translate-y-1 hover:shadow-soft">
+    <article className="app-card p-5 transition hover:-translate-y-1 hover:shadow-soft">
       <div className="flex gap-4">
         <Avatar initials={mentor.initials} />
         <div className="min-w-0 flex-1">
@@ -72,7 +83,7 @@ export function MentorCard({ mentor, compact = false }) {
               <MapPin size={15} aria-hidden="true" /> {mentor.city}
             </span>
             <span className="inline-flex items-center gap-1">
-              <Video size={15} aria-hidden="true" /> {mentor.mode}
+              <Video size={15} aria-hidden="true" /> {modeLabel[mentor.mode] || mentor.mode}
             </span>
             <span className="inline-flex items-center gap-1">
               <CalendarDays size={15} aria-hidden="true" /> {mentor.availability}
@@ -105,7 +116,7 @@ export function BookingCard({ booking }) {
           <p className="mt-1 text-sm text-app-muted">{booking.mentor}</p>
           <p className="mt-3 text-sm text-app-muted">{booking.date} at {booking.time}</p>
         </div>
-        <Badge tone={statusTone[booking.status] || "gray"}>{booking.status}</Badge>
+        <Badge tone={statusInfo(booking.status)[1]}>{statusInfo(booking.status)[0]}</Badge>
       </div>
     </Panel>
   );
@@ -115,7 +126,7 @@ export function SimpleTable({ headers, rows }) {
   return (
     <div className="app-card overflow-hidden">
       <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-gradient-to-r from-blue-50 to-green-50 text-xs uppercase text-app-muted">
+        <thead className="bg-slate-50 text-xs uppercase text-app-muted">
           <tr>
             {headers.map((header) => (
               <th key={header} className="px-4 py-3 font-semibold">{header}</th>
@@ -124,7 +135,7 @@ export function SimpleTable({ headers, rows }) {
         </thead>
         <tbody className="divide-y divide-app-border">
           {rows.map((row) => (
-            <tr key={row.join("-")} className="bg-white transition-colors hover:bg-blue-50/50">
+            <tr key={row.join("-")} className="bg-white">
               {row.map((cell) => (
                 <td key={cell} className="px-4 py-4 text-app-muted">{cell}</td>
               ))}

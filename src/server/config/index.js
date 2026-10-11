@@ -1,10 +1,20 @@
 const googleRedirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/auth/google/callback";
 const cookieSecure = googleRedirectUri.startsWith("https://");
+const isProductionBuild = process.env.NODE_ENV === "production" || cookieSecure;
+const DEFAULT_JWT_SECRET = "change-this-secret";
 
 export const appConfig = {
   env: cookieSecure ? "production" : "development",
+  cookieSecure, // cookies.js and guards.js read this; it was missing before
   mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/GuideShala",
-  jwtSecret: process.env.JWT_SECRET || "change-this-secret",
+  // Read lazily so `next build` works, but refuse to run production with the default secret.
+  get jwtSecret() {
+    const secret = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
+    if (isProductionBuild && secret === DEFAULT_JWT_SECRET) {
+      throw new Error("JWT_SECRET must be set in production.");
+    }
+    return secret;
+  },
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   authCookieName: process.env.AUTH_COOKIE_NAME || "GuideShala_session",
   authCookiePath: "/",

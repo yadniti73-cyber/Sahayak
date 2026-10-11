@@ -4,8 +4,9 @@ GuideShala is a mentorship marketplace platform that connects **seekers** (peopl
 
 This README is the single entry point for engineers picking up this repo. It summarizes the approved architecture, database design, authentication design, and folder structure so implementation can proceed without re-deriving decisions already made. The full source documents this is distilled from live in [`docs/`](./docs).
 
-Link = https://GuideShala-india.onrender.com
-> This is a fresh scaffold: folders exist per the approved structure, but application code has not been written yet. Build order is defined in [§9](#9-recommended-build-order).
+**Live:** https://GuideShala-india.onrender.com
+
+> Folders follow the approved structure. The public-site UI (hero, features, founders trust section, feedback form, header, footer and shells) is in place; the remaining modules follow the build order in [§10](#10-recommended-build-order).
 
 ---
 
@@ -21,7 +22,7 @@ Link = https://GuideShala-india.onrender.com
 | Password hashing | bcryptjs, 12 salt rounds |
 | Validation | Zod |
 | Forms | React Hook Form + Zod |
-| Animation | Framer Motion (reduced-motion aware) |
+| Animation | CSS keyframes + IntersectionObserver (`Reveal`, `LazySection`, rotating headline words); all reduced-motion aware. Framer Motion is optional |
 | Icons | Lucide React |
 | Search (prod) | MongoDB Atlas Search over a denormalized mentor search projection |
 | Deployment | Render (app) + MongoDB Atlas (db); Node runtime for all DB-backed routes |
@@ -33,7 +34,7 @@ GuideShala is built as a **modular monolith**:
 - One Next.js App Router application
 - One MongoDB Atlas database
 - One REST API surface under `/api`
-- Explicit, enforced feature boundaries (see §6)
+- Explicit, enforced feature boundaries (see §3 and §4)
 - Server-first rendering with client islands only where interactivity requires it
 
 This is deliberate for V1: auth, catalog, booking, dashboards, and admin are tightly related, and a single deployable keeps authorization, caching, and operations simple — while module boundaries stay explicit so pieces can be extracted later if needed.
@@ -256,6 +257,15 @@ JWT_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 GOOGLE_REDIRECT_URI=https://your-app.onrender.com/api/auth/google/callback
+
+# Optional: footer contact details and social links (empty ones are hidden)
+NEXT_PUBLIC_CONTACT_EMAIL=
+NEXT_PUBLIC_CONTACT_PHONE=
+NEXT_PUBLIC_CONTACT_LOCATION=
+NEXT_PUBLIC_WHATSAPP_NUMBER=
+NEXT_PUBLIC_INSTAGRAM_URL=
+NEXT_PUBLIC_X_URL=
+NEXT_PUBLIC_LINKEDIN_URL=
 ```
 
 Required env vars:
@@ -267,6 +277,7 @@ Required env vars:
 - `GOOGLE_CLIENT_ID` — Server-side Google OAuth client ID used when exchanging tokens and handling OAuth redirects.
 - `GOOGLE_CLIENT_SECRET` — Server-side Google OAuth client secret.
 - `GOOGLE_REDIRECT_URI` — Fully qualified redirect URI for the Google OAuth callback route.
+- `NEXT_PUBLIC_CONTACT_*`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_*_URL` — Optional public footer details (email, phone, location, WhatsApp number with country code, social profile links). These are public by design; never put secrets in `NEXT_PUBLIC_` variables.
 
 On Render:
 
@@ -293,7 +304,7 @@ On Render:
 - Route groups: `/api/auth/*`, `/api/mentors/*`, `/api/categories/*`, `/api/bookings/*`, `/api/reviews/*`, `/api/favorites/*`, `/api/profile/*`, `/api/notifications/*`, `/api/admin/*`.
 - Admin never piggybacks on seeker/mentor endpoints — dedicated `/api/admin/*` handlers only.
 
-## 9. Recommended Build Order
+## 10. Recommended Build Order
 
 1. **Foundation** — route groups, design tokens, shared primitives, server infra (`db`, `config`, `observability`)
 2. **Auth** — `users`, `authSessions` models → password/token/cookie helpers → session repo/service → `register`/`login`/`logout`/`me` → `getCurrentUser`/`requireAuth`/`requireRole` → middleware
@@ -302,7 +313,7 @@ On Render:
 5. **Dashboards** — seeker, mentor, admin shell
 6. **Admin operations** — verification queue, category management, user/booking oversight
 
-## 10. Non-Negotiable Rules
+## 11. Non-Negotiable Rules
 
 - Modular monolith, not ad hoc pages with embedded logic.
 - App Router pages stay thin and server-first; business workflows live in feature `server/services`, DB access only in `server/repositories`.
@@ -313,7 +324,7 @@ On Render:
 - URL state drives discovery/filtering; server rendering drives first paint.
 - Don't build future modules (payments, messaging, video) in V1 — but don't block their extension points either.
 
-## 11. Open Product Decisions
+## 12. Open Product Decisions
 
 Still need explicit sign-off before/while building the related feature — see `docs/GuideShala-architecture.md` §20 for the full list. Notable ones:
 
@@ -326,7 +337,20 @@ Still need explicit sign-off before/while building the related feature — see `
 
 Until confirmed, the architecture docs define the safest buildable defaults, and this codebase should follow them.
 
-## 12. Source Documents
+## 13. UI Theme and Front-End Conventions
+
+**Palette:** blue (`app-primary`), green (`green-600` / `emerald`) and white. Every page uses the same blue-to-green gradient language as the hero.
+
+- **Backgrounds:** `bg-gradient-to-br from-white via-blue-50/60 to-green-50/50` for sections; `bg-section-blue` / `bg-section-green` helpers; the footer uses a green gradient with a faint dot pattern.
+- **Accents:** headline highlights use `bg-gradient-to-r from-app-primary to-green-600 bg-clip-text text-transparent`; cards use a thin green top border and lift on hover.
+- **Headings:** exactly one `h1` per page. `SectionHeading` renders an `h2` unless `as="h1"` is passed.
+- **Motion:** `Reveal` fades sections in on scroll; `RotatingWords` / `DynamicHeading` rotate a highlighted word; `LazySection` plus `next/dynamic` defers below-the-fold sections; images use `loading="lazy"`. All animation is disabled for `prefers-reduced-motion`.
+- **Global CSS:** the tokens, keyframes (`reveal`, `word-swap`, `float-slow`, `shimmer`, `pop-in`) and background helpers live in `theme-additions.css`, appended to `src/app/globals.css`.
+- **Shells:** `PublicShell` (header, main, footer, skip link) and `DashboardShell` (responsive sidebar and top bar, active-route highlighting). The header shows a reading-progress bar and a mobile menu; the footer builds its category column from `@/lib/frontend-data`.
+- **Trust content:** no invented ratings, review counts or testimonials. The home page shows the founders (photos in `public/images/team/`) and the mission and vision. Add real reviews only after real sessions are completed.
+- **Feedback:** `FeedbackForm` posts to `POST /api/feedback`. Replace the logging in that route with a database write or an email notification.
+
+## 14. Source Documents
 
 The full, unabridged versions of everything summarized above:
 

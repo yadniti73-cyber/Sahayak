@@ -1,21 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { PublicShell, Panel, SectionHeading } from "@/components";
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { PublicShell, Panel } from "@/components";
+import { PageHero } from "@/components/PageHero";
+import { FormAlert, PasswordField, SubmitButton, isStrongPassword } from "@/components/auth-fields";
 
-export default function ResetPasswordPage() {
+function ResetForm() {
   const router = useRouter();
-  const [token, setToken] = useState("");
+  const token = useSearchParams().get("token") || "";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setToken(params.get("token") || "");
-  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -25,14 +23,12 @@ export default function ResetPasswordPage() {
       setError("A reset token is required. Please use the link sent to your email.");
       return;
     }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+    if (!isStrongPassword(password)) {
+      setError("Please meet all the password requirements.");
       return;
     }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -52,54 +48,65 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      router.push("/dashboard/home");
+      // Old sessions are revoked on reset, so send the user to sign in again.
+      router.push("/login?reset=1");
     } catch (err) {
       setError("Unable to reset password. Please try again.");
       setLoading(false);
     }
   }
 
+  if (!token) {
+    return (
+      <div className="grid gap-3">
+        <FormAlert>This link is missing its reset token. Request a new one to continue.</FormAlert>
+        <Link href="/forgot-password" className="text-sm font-semibold text-app-primary hover:underline">Request a new reset link</Link>
+      </div>
+    );
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={handleSubmit}>
+      <PasswordField
+        label="New password"
+        placeholder="New password"
+        autoComplete="new-password"
+        showRules
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <PasswordField
+        label="Confirm password"
+        placeholder="Confirm password"
+        autoComplete="new-password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+      />
+      {confirmPassword && password !== confirmPassword ? (
+        <p className="text-xs text-red-600">Passwords do not match yet.</p>
+      ) : null}
+      <FormAlert>{error}</FormAlert>
+      <SubmitButton loading={loading} loadingText="Updating password...">Update password</SubmitButton>
+    </form>
+  );
+}
+
+export default function ResetPasswordPage() {
   return (
     <PublicShell>
-      <section className="py-12">
-        <div className="app-container grid gap-8 lg:grid-cols-[0.9fr_1fr]">
-          <SectionHeading
-            eyebrow="Create new password"
-            title="Secure your account"
-            description="Use a strong password with uppercase, lowercase, a number, and a special character."
-          />
-          <Panel>
-            <form className="grid gap-4" onSubmit={handleSubmit}>
-              <label className="grid gap-2 text-sm font-semibold">
-                New password
-                <input
-                  className="app-input"
-                  placeholder="New password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-semibold">
-                Confirm password
-                <input
-                  className="app-input"
-                  placeholder="Confirm password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  required
-                />
-              </label>
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              <button type="submit" className="app-button w-full" disabled={loading}>
-                {loading ? "Updating password…" : "Update password"}
-              </button>
-            </form>
+      <PageHero
+        eyebrow="Create new password"
+        title="Secure your"
+        highlight="account"
+        description="Use a strong password with uppercase, lowercase, a number, and a special character."
+        aside={
+          <Panel className="shadow-soft">
+            <Suspense fallback={null}>
+              <ResetForm />
+            </Suspense>
           </Panel>
-        </div>
-      </section>
+        }
+      />
     </PublicShell>
   );
 }

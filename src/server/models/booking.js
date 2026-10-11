@@ -27,7 +27,16 @@ const BookingSchema = new mongoose.Schema(
       required: true,
     },
     startAtUtc: { type: Date, required: true },
-    endAtUtc: { type: Date, required: true },
+    endAtUtc: {
+      type: Date,
+      required: true,
+      validate: {
+        validator(value) {
+          return !this.startAtUtc || value > this.startAtUtc;
+        },
+        message: "endAtUtc must be after startAtUtc.",
+      },
+    },
     mentorTimezone: { type: String, default: "" },
     seekerTimezoneAtBooking: { type: String, default: "" },
     notes: { type: String, default: "" },
@@ -45,10 +54,10 @@ BookingSchema.index({ seekerId: 1 });
 BookingSchema.index({ mentorId: 1 });
 BookingSchema.index({ mentorProfileId: 1 });
 BookingSchema.index({ status: 1 });
-
-BookingSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
+// A mentor can have only one CONFIRMED booking at the same start time.
+BookingSchema.index(
+  { mentorId: 1, startAtUtc: 1 },
+  { unique: true, partialFilterExpression: { status: "CONFIRMED" } }
+);
 
 export const Booking = mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
