@@ -3,17 +3,18 @@
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 
-export function SignOutButton({ className = "", children = "Sign out", iconOnly = false }) {
+export function SignOutButton({ className = "", children = "Sign out", iconOnly = false, onSignedOut }) {
   const [loading, setLoading] = useState(false);
 
   async function handleSignOut() {
     setLoading(true);
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+      if (onSignedOut) onSignedOut();
     } finally {
-      // Full page load so Next.js drops every cached signed-in page.
       window.location.assign("/login");
     }
+  }
   }
 
   return (

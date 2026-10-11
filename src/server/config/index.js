@@ -15,10 +15,10 @@ export const appConfig = {
     }
     return secret;
   },
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "30d",
   authCookieName: process.env.AUTH_COOKIE_NAME || "GuideShala_session",
   authCookiePath: "/",
-  authCookieMaxAge: 60 * 60 * 24 * 7, // 7 days
+  authCookieMaxAge: 60 * 60 * 24 * 30, // 30 days
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || "",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",

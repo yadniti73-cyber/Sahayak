@@ -6,11 +6,22 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, Search, X } from "lucide-react";
 import { publicNavigationItems } from "@/lib/navigation";
-import { ButtonLink } from "../app-primitives";
+import { ButtonLink, Avatar } from "../app-primitives";
+import { useAuth } from "../providers/AuthContext";
+
+function getInitials(firstName, lastName) {
+  const first = (firstName || "").trim();
+  const last = (lastName || "").trim();
+  if (first && last) return `${first[0]}${last[0]}`.toUpperCase();
+  if (first) return first[0].toUpperCase();
+  if (last) return last[0].toUpperCase();
+  return "?";
+}
 
 export function PublicHeader({ children, className = "" }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [open, setOpen] = useState(false);
@@ -113,15 +124,23 @@ export function PublicHeader({ children, className = "" }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
-           <Link
-            href="/login"
-            className="hidden rounded-lg px-3 py-2 text-md font-bold text-white bg-green-500 hover:bg-green-600 sm:inline-flex"
-          >
-            Log in
-          </Link>
-          <ButtonLink href="/register" className="px-4 py-2 ">
-            Get started
-          </ButtonLink>
+          {user ? (
+            <Link href="/dashboard/home" title={`${user.firstName} ${user.lastName}`}>
+              <Avatar initials={getInitials(user.firstName, user.lastName)} size="sm" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden rounded-lg px-3 py-2 text-md font-bold text-white bg-green-500 hover:bg-green-600 sm:inline-flex"
+              >
+                Log in
+              </Link>
+              <ButtonLink href="/register" className="px-4 py-2 ">
+                Get started
+              </ButtonLink>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -168,10 +187,17 @@ export function PublicHeader({ children, className = "" }) {
               </Link>
             ))}
           </nav>
-          <div className="grid grid-cols-2 gap-3">
-            <ButtonLink href="/login" variant="primary">Log in</ButtonLink>
-            <ButtonLink href="/register">Get started</ButtonLink>
-          </div>
+          {user ? (
+            <Link href="/dashboard/home" className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 px-3 py-3">
+              <Avatar initials={getInitials(user.firstName, user.lastName)} size="sm" />
+              <span className="text-md font-medium text-app-primary">{user.firstName} {user.lastName}</span>
+            </Link>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <ButtonLink href="/login" variant="primary">Log in</ButtonLink>
+              <ButtonLink href="/register">Get started</ButtonLink>
+            </div>
+          )}
         </div>
       </div>
 

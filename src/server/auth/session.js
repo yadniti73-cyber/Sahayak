@@ -1,4 +1,5 @@
 import { createAuthSession, findAuthSessionById, revokeAuthSession, revokeSessionsForUser as revokeSessionsForUserRepo } from "@/server/repositories/authSessions";
+import { findUserById } from "@/server/repositories/users";
 import { signJwt, verifyJwt } from "@/server/auth/jwt";
 import { appConfig } from "@/server/config";
 
@@ -6,7 +7,14 @@ export async function createSession({ userId, userAgent, ipAddress, role = "SEEK
   const expiresAt = new Date(Date.now() + appConfig.authCookieMaxAge * 1000);
   const session = await createAuthSession({ userId, userAgent, ipAddress, expiresAt });
 
-  const token = signJwt({ sub: userId.toString(), sessionId: session._id.toString(), role });
+  const user = await findUserById(userId.toString());
+  const token = signJwt({
+    sub: userId.toString(),
+    sessionId: session._id.toString(),
+    role,
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+  });
   return { token, session };
 }
 
