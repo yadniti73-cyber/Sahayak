@@ -4,7 +4,7 @@ GuideShala is a mentorship marketplace platform that connects **seekers** (peopl
 
 This README is the single entry point for engineers picking up this repo. It summarizes the approved architecture, database design, authentication design, and folder structure so implementation can proceed without re-deriving decisions already made. The full source documents this is distilled from live in [`docs/`](./docs).
 
-**Live:** https://GuideShala-india.onrender.com
+**Live:** [https://sahayak-india.onrender.com](https://guideshala.in/)
 
 > Folders follow the approved structure. The public-site UI (hero, features, founders trust section, feedback form, header, footer and shells) is in place; the remaining modules follow the build order in [§10](#10-recommended-build-order).
 
