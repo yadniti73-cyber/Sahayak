@@ -54,7 +54,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard/home");
+      router.push(result.data?.redirectTo || "/dashboard/home");
       router.refresh();
     } catch (err) {
       setError("Unable to sign in. Please try again.");

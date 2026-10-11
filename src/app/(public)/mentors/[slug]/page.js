@@ -8,7 +8,7 @@ import { HeroIconBackdrop } from "@/components/HeroIconBackdrop";
 import { Reveal } from "@/components/Reveal";
 import { getMentorBySlug, getMentors } from "@/features/catalog/server/service";
 
-export const revalidate = 300;
+export const revalidate = 60;
 export const dynamicParams = true;
 
 const expect = [

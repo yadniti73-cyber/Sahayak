@@ -153,43 +153,6 @@ export const testimonials = [
   },
 ];
 
-export const bookings = [
-  {
-    mentor: "Dr. Ananya Mehta",
-    topic: "Report review and next steps",
-    date: "Today",
-    time: "6:00 PM",
-    status: "Confirmed",
-  },
-  {
-    mentor: "Raghav Bansal",
-    topic: "Pitch deck review",
-    date: "Tomorrow",
-    time: "11:30 AM",
-    status: "Requested",
-  },
-  {
-    mentor: "Prof. Kavita Rao",
-    topic: "Research roadmap",
-    date: "Friday",
-    time: "4:00 PM",
-    status: "Completed",
-  },
-];
-
-export const notifications = [
-  "Your session with Dr. Ananya is confirmed for 6:00 PM.",
-  "Raghav usually responds within 4 hours.",
-  "Your profile is 72% complete.",
-];
-
-export const adminRows = [
-  ["Verification queue", "18 mentors", "6 high priority"],
-  ["Open reports", "7 reports", "2 need review"],
-  ["Daily signups", "284 users", "+12%"],
-  ["Active sessions", "1,246 sessions", "Healthy"],
-];
-
 export const platformStats = [
   { label: "Mentors", value: "10,000+" },
   { label: "Sessions", value: "50,000+" },

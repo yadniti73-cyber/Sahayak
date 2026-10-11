@@ -1,7 +1,8 @@
 import { MentorProfile } from "@/server/models/mentorProfile";
 
 export async function findPublishedMentors({ category, search, limit = 20, offset = 0 } = {}) {
-  const query = { active: true };
+  // Only admin-verified mentors are ever visible to seekers.
+  const query = { active: true, verified: true };
 
   if (category) {
     const sanitized = category.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -26,7 +27,7 @@ export async function findPublishedMentors({ category, search, limit = 20, offse
 }
 
 export async function findMentorBySlug(slug) {
-  return MentorProfile.findOne({ slug: slug.toLowerCase().trim(), active: true }).lean();
+  return MentorProfile.findOne({ slug: slug.toLowerCase().trim(), active: true, verified: true }).lean();
 }
 
 export async function findMentorById(id) {

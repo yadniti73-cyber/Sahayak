@@ -12,15 +12,30 @@ export default function MentorAvailabilityPage() {
         <Panel>
           <form className="grid gap-4">
             <div className="grid gap-3 sm:grid-cols-3">
-              <select className="app-input"><option>Monday</option></select>
-              <input className="app-input" type="time" defaultValue="10:00" />
-              <input className="app-input" type="time" defaultValue="12:00" />
+              <select className="app-input" defaultValue="">
+                <option value="" disabled>Day</option>
+                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((d) => (
+                  <option key={d}>{d}</option>
+                ))}
+              </select>
+              <input className="app-input" type="time" aria-label="Start time" />
+              <input className="app-input" type="time" aria-label="End time" />
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <select className="app-input"><option>Video</option><option>In-person</option></select>
-              <input className="app-input" placeholder="Asia/Kolkata" />
-              <select className="app-input"><option>Active</option><option>Paused</option></select>
+              <select className="app-input" defaultValue="">
+                <option value="" disabled>Mode</option>
+                <option>Video</option>
+                <option>Phone</option>
+                <option>In-person</option>
+              </select>
+              <input className="app-input" placeholder="Timezone" />
+              <select className="app-input" defaultValue="">
+                <option value="" disabled>Status</option>
+                <option>Active</option>
+                <option>Paused</option>
+              </select>
             </div>
+            <p className="text-xs text-app-muted">Saving availability is not connected to the backend yet.</p>
             <ButtonLink href="/mentor/availability">Save availability</ButtonLink>
           </form>
         </Panel>

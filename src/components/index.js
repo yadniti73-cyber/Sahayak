@@ -6,6 +6,7 @@ export {
   Badge,
   ButtonLink,
   CheckItem,
+  EmptyState,
   Panel,
   ProgressBar,
   Rating,

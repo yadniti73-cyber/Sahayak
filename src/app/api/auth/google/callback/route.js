@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { loginWithGoogleCode } from "@/features/auth/server/service";
 import { setAuthCookie, clearAuthCookie } from "@/server/auth/cookies";
 import { appConfig } from "@/server/config";
+import { ROLE_HOME_ROUTES } from "@/lib/routes";
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -31,7 +32,7 @@ export async function GET(request) {
 
     const result = await loginWithGoogleCode(code, { userAgent, ipAddress });
 
-    const dashboardUrl = new URL("/dashboard/home", request.url);
+    const dashboardUrl = new URL(ROLE_HOME_ROUTES[result.user.role] || "/dashboard/home", request.url);
     const response = NextResponse.redirect(dashboardUrl);
 
     response.cookies.set({

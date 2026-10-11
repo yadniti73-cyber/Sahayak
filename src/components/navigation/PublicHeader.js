@@ -8,6 +8,7 @@ import { Menu, Search, X } from "lucide-react";
 import { publicNavigationItems } from "@/lib/navigation";
 import { ButtonLink, Avatar } from "../app-primitives";
 import { useAuth } from "../providers/AuthContext";
+import { ROLE_HOME_ROUTES } from "@/lib/routes";
 
 function getInitials(firstName, lastName) {
   const first = (firstName || "").trim();
@@ -125,7 +126,7 @@ export function PublicHeader({ children, className = "" }) {
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           {user ? (
-            <Link href="/dashboard/home" title={`${user.firstName} ${user.lastName}`}>
+            <Link href={ROLE_HOME_ROUTES[user.role] || "/dashboard/home"} title={`${user.firstName} ${user.lastName}`}>
               <Avatar initials={getInitials(user.firstName, user.lastName)} size="sm" />
             </Link>
           ) : (
@@ -188,7 +189,7 @@ export function PublicHeader({ children, className = "" }) {
             ))}
           </nav>
           {user ? (
-            <Link href="/dashboard/home" className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 px-3 py-3">
+            <Link href={ROLE_HOME_ROUTES[user.role] || "/dashboard/home"} className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 px-3 py-3">
               <Avatar initials={getInitials(user.firstName, user.lastName)} size="sm" />
               <span className="text-md font-medium text-app-primary">{user.firstName} {user.lastName}</span>
             </Link>

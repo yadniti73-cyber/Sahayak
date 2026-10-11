@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { connectMongo } from "@/server/db/mongo";
 import { findUserById } from "@/server/repositories/users";
+import { findMentorByUserId } from "@/server/repositories/mentorProfiles";
 import { addFavorite, removeFavorite, findFavoritesForSeeker, findFavorite } from "@/server/repositories/favorites";
 
 const favoritePayload = z.object({
@@ -13,6 +14,10 @@ export async function addMentorToFavorites(seekerId, payload) {
 
   const mentor = await findUserById(parsed.mentorId);
   if (!mentor || mentor.role !== "MENTOR") {
+    throw new Error("Mentor not found.");
+  }
+  const mentorProfile = await findMentorByUserId(parsed.mentorId);
+  if (!mentorProfile || !mentorProfile.active || !mentorProfile.verified) {
     throw new Error("Mentor not found.");
   }
 

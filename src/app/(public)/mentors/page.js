@@ -14,6 +14,9 @@ const tips = [
   [Wallet, "Know the price", "Each profile shows the price before you request."],
 ];
 
+// Re-check the database regularly; approvals also revalidate this page immediately.
+export const revalidate = 60;
+
 export default async function MentorsPage() {
   const [mentors, categories] = await Promise.all([getMentors({ limit: 20 }), getCategories()]);
 

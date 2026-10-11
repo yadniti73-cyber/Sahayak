@@ -1,8 +1,12 @@
-import { DashboardShell, ButtonLink, SectionHeading } from "@/components";
+import { DashboardShell, ButtonLink, EmptyState, SectionHeading } from "@/components";
 import { BookingCard } from "@/components/domain-cards";
-import { bookings } from "@/lib/frontend-data";
+import { requirePageAccess } from "@/server/auth/route-guards";
+import { getBookingViewsForUser } from "@/server/dashboard/queries";
 
-export default function MentorBookingsPage() {
+export default async function MentorBookingsPage() {
+  const user = await requirePageAccess(["MENTOR"]);
+  const bookings = await getBookingViewsForUser(user.id, "MENTOR");
+
   return (
     <DashboardShell role="mentor" title="Booking requests">
       <div className="grid gap-6">
@@ -14,11 +18,15 @@ export default function MentorBookingsPage() {
           />
           <ButtonLink href="/mentor/availability" variant="secondary">Update availability</ButtonLink>
         </div>
-        <div className="grid gap-4">
-          {bookings.map((booking) => (
-            <BookingCard key={booking.topic} booking={booking} />
-          ))}
-        </div>
+        {bookings.length === 0 ? (
+          <EmptyState title="No booking requests yet" description="Requests from seekers will appear here as soon as they come in." />
+        ) : (
+          <div className="grid gap-4">
+            {bookings.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </div>
+        )}
       </div>
     </DashboardShell>
   );

@@ -122,9 +122,9 @@ export function BookingCard({ booking }) {
   );
 }
 
-export function SimpleTable({ headers, rows }) {
+export function SimpleTable({ headers, rows, emptyMessage = "Nothing to show yet." }) {
   return (
-    <div className="app-card overflow-hidden">
+    <div className="app-card overflow-x-auto">
       <table className="w-full border-collapse text-left text-sm">
         <thead className="bg-slate-50 text-xs uppercase text-app-muted">
           <tr>
@@ -134,13 +134,19 @@ export function SimpleTable({ headers, rows }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-app-border">
-          {rows.map((row) => (
-            <tr key={row.join("-")} className="bg-white">
-              {row.map((cell) => (
-                <td key={cell} className="px-4 py-4 text-app-muted">{cell}</td>
-              ))}
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={headers.length} className="px-4 py-8 text-center text-app-muted">{emptyMessage}</td>
             </tr>
-          ))}
+          ) : (
+            rows.map((row, i) => (
+              <tr key={i} className="bg-white">
+                {row.map((cell, j) => (
+                  <td key={j} className="px-4 py-4 text-app-muted">{cell}</td>
+                ))}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

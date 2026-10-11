@@ -1,5 +1,5 @@
 import { Bell, CalendarDays, CheckCircle2, Heart, ShieldCheck, TrendingUp, Users } from "lucide-react";
-import { adminRows, bookings, categories, mentors, notifications } from "@/lib/frontend-data";
+import { categories, mentors } from "@/lib/frontend-data";
 import { Badge, ButtonLink, CheckItem, Panel, ProgressBar, SectionHeading, StatCard } from "./app-primitives";
 import { BookingCard, CategoryCard, MentorCard, SimpleTable } from "./domain-cards";
 import { Reveal } from "./Reveal";
@@ -41,14 +41,16 @@ export function CategoryGrid({ items = categories }) {
   );
 }
 
-export function DashboardOverview() {
+export function DashboardOverview({ data }) {
+  const { stats, upcoming, activity } = data;
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Upcoming" value="2" detail="Sessions this week" icon={CalendarDays} />
-        <StatCard label="Completed" value="18" detail="Guidance calls finished" icon={CheckCircle2} />
-        <StatCard label="Saved mentors" value="7" detail="Ready for repeat booking" icon={Heart} />
-        <StatCard label="Unread" value="3" detail="Notifications waiting" icon={Bell} />
+        <StatCard label="Upcoming" value={String(stats.upcomingThisWeek)} detail="Sessions this week" icon={CalendarDays} />
+        <StatCard label="Completed" value={String(stats.completed)} detail="Guidance calls finished" icon={CheckCircle2} />
+        <StatCard label="Saved mentors" value={String(stats.savedMentors)} detail="Ready for repeat booking" icon={Heart} />
+        <StatCard label="Unread" value={String(stats.unread)} detail="Notifications waiting" icon={Bell} />
       </div>
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Panel>
@@ -57,19 +59,31 @@ export function DashboardOverview() {
             <ButtonLink href="/dashboard/bookings" variant="ghost">View all</ButtonLink>
           </div>
           <div className="mt-4 grid gap-3">
-            {bookings.slice(0, 2).map((booking) => (
-              <BookingCard key={booking.topic} booking={booking} />
-            ))}
+            {upcoming.length === 0 ? (
+              <div className="rounded-lg bg-slate-50 p-4 text-sm text-app-muted">
+                <p>No upcoming sessions.</p>
+                <div className="mt-3">
+                  <ButtonLink href="/mentors" variant="secondary">Find a mentor</ButtonLink>
+                </div>
+              </div>
+            ) : (
+              upcoming.map((booking) => <BookingCard key={booking.id} booking={booking} />)
+            )}
           </div>
         </Panel>
         <Panel>
           <h2 className="text-lg font-bold">Recent activity</h2>
           <div className="mt-4 grid gap-3">
-            {notifications.map((item) => (
-              <div key={item} className="rounded-lg bg-slate-50 p-3 text-sm text-app-muted">
-                {item}
-              </div>
-            ))}
+            {activity.length === 0 ? (
+              <div className="rounded-lg bg-slate-50 p-3 text-sm text-app-muted">No activity yet.</div>
+            ) : (
+              activity.map((item) => (
+                <div key={item.id} className="rounded-lg bg-slate-50 p-3 text-sm text-app-muted">
+                  <p className={item.read ? "" : "font-semibold text-app-text"}>{item.title}</p>
+                  {item.message ? <p className="mt-1">{item.message}</p> : null}
+                </div>
+              ))
+            )}
           </div>
         </Panel>
       </div>
@@ -77,34 +91,45 @@ export function DashboardOverview() {
   );
 }
 
-export function MentorWorkspaceOverview() {
+export function MentorWorkspaceOverview({ data }) {
+  const { stats, strength, pendingRequests, hasProfile } = data;
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Today's schedule" value="4" detail="2 video, 2 in-person" icon={CalendarDays} />
-        <StatCard label="Pending requests" value="9" detail="Average response 4h" icon={Bell} />
-        <StatCard label="Rating" value="4.8" detail="178 public reviews" icon={TrendingUp} />
-        <StatCard label="Completion" value="92%" detail="Monthly sessions" icon={CheckCircle2} />
+        <StatCard label="Today's schedule" value={String(stats.todayCount)} detail={stats.todayDetail} icon={CalendarDays} />
+        <StatCard label="Pending requests" value={String(stats.pending)} detail="Waiting for your response" icon={Bell} />
+        <StatCard label="Rating" value={stats.rating} detail={stats.ratingDetail} icon={TrendingUp} />
+        <StatCard label="Completion" value={stats.completion} detail={stats.completionDetail} icon={CheckCircle2} />
       </div>
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <Panel>
           <h2 className="text-lg font-bold">Profile strength</h2>
-          <p className="mt-2 text-sm text-app-muted">Verification, availability, and story are visible to seekers.</p>
+          <p className="mt-2 text-sm text-app-muted">
+            {hasProfile
+              ? `Your profile is ${strength.percent}% complete. A fuller profile is easier for seekers to trust.`
+              : "Your public mentor profile has not been created for this account yet."}
+          </p>
           <div className="mt-5">
-            <ProgressBar value={82} />
+            <ProgressBar value={strength.percent} />
           </div>
           <div className="mt-5 grid gap-3">
-            <CheckItem>Verification documents uploaded</CheckItem>
-            <CheckItem>Three weekly availability windows active</CheckItem>
-            <CheckItem>Response time visible on public profile</CheckItem>
+            {strength.items.map((item) => (
+              <CheckItem key={item.label} done={item.done}>{item.label}</CheckItem>
+            ))}
           </div>
         </Panel>
         <Panel>
-          <h2 className="text-lg font-bold">Pending requests</h2>
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-bold">Pending requests</h2>
+            <ButtonLink href="/mentor/bookings" variant="ghost">View all</ButtonLink>
+          </div>
           <div className="mt-4 grid gap-3">
-            {bookings.slice(0, 2).map((booking) => (
-              <BookingCard key={booking.topic} booking={booking} />
-            ))}
+            {pendingRequests.length === 0 ? (
+              <div className="rounded-lg bg-slate-50 p-4 text-sm text-app-muted">No pending requests right now.</div>
+            ) : (
+              pendingRequests.map((booking) => <BookingCard key={booking.id} booking={booking} />)
+            )}
           </div>
         </Panel>
       </div>
@@ -112,16 +137,18 @@ export function MentorWorkspaceOverview() {
   );
 }
 
-export function AdminOverview() {
+export function AdminOverview({ data }) {
+  const { stats, rows } = data;
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Registered users" value="84,210" detail="+284 today" icon={Users} />
-        <StatCard label="Verified mentors" value="10,248" detail="18 waiting" icon={ShieldCheck} />
-        <StatCard label="Active sessions" value="1,246" detail="Healthy" icon={CalendarDays} />
-        <StatCard label="Reports" value="7" detail="2 high priority" icon={Bell} />
+        <StatCard label="Registered users" value={stats.users} detail={`+${stats.signupsToday} today`} icon={Users} />
+        <StatCard label="Verified mentors" value={stats.verifiedMentors} detail={`${stats.pendingMentors} waiting`} icon={ShieldCheck} />
+        <StatCard label="Upcoming sessions" value={stats.upcomingConfirmed} detail={`${stats.totalBookings} bookings in total`} icon={CalendarDays} />
+        <StatCard label="Pending requests" value={stats.pendingRequests} detail="Awaiting mentor response" icon={Bell} />
       </div>
-      <SimpleTable headers={["Area", "Volume", "Status"]} rows={adminRows} />
+      <SimpleTable headers={["Area", "Volume", "Status"]} rows={rows} />
     </div>
   );
 }

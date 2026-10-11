@@ -69,12 +69,12 @@ Every product feature belongs to exactly one owning module. Cross-module reuse o
 | **Public Site** | `/`, `/about`, `/how-it-works`, `/faq`, `/contact` | none | Marketing content, homepage, global nav/footer, SEO |
 | **Auth** | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/api/auth/*` | `users`, `authSessions`, `passwordResetTokens` | Registration, login, logout, current user, password lifecycle, lockout, auth audit |
 | **Catalog** | `/mentors`, `/categories`, `/category/[slug]`, `/api/mentors`, `/api/categories` | `categories`, read projections over mentors | Discovery, filters, sorting, featured mentors, search ranking |
-| **Mentor Profiles** | `/mentors/[slug]`, `/mentor/profile`, profile edit APIs | `mentorProfiles`, `verificationSubmissions`, `availabilityRules`, `availabilityExceptions` | Public mentor pages, profile completion, verification, availability |
+| **Mentor Profiles** | `/mentors/[slug]`, `/mentor/profile`, `/api/mentor/*`, `/api/documents/[id]` | `mentorProfiles`, `verificationSubmissions`, `mentorDocuments`, `availabilityRules`, `availabilityExceptions` | Public mentor pages, verification application, document upload, availability |
 | **Bookings** | `/dashboard/bookings`, `/mentor/bookings`, `/mentor/calendar`, booking APIs | `bookings`, `bookingEvents` | Request/accept/reject/cancel/reschedule/complete, conflict checks, reminders |
 | **User Account** | `/dashboard/profile`, `/dashboard/settings`, `/dashboard/favorites` | `favorites`, seeker profile fields on `users` | Seeker profile, settings, saved mentors |
 | **Notifications** | notification APIs + bell dropdown | `notifications` | In-app activity feed, unread counts, read state |
 | **Dashboards** | `/dashboard`, `/dashboard/home`, `/mentor/dashboard`, `/admin` home shell | none (composes others) | Role-aware shell, overview metrics, quick actions |
-| **Admin** | `/admin/*`, `/api/admin/*` | moderation/config over admin workflows | User management, verification review, categories, booking oversight |
+| **Admin** | `/admin/*`, `/api/admin/*` | moderation/config over admin workflows | User management, **mentor verification review (approve / request changes / reject / revoke)**, categories, booking oversight |
 
 **Ownership rules:** only the owning module changes its business rules; other modules may render its exported components but not deep-import internals; shared UI stays generic — no domain copy or business rules.
 
@@ -186,7 +186,8 @@ Full folder-by-folder responsibilities and import rules: [`docs/GuideShala-folde
 | `authSessions` | Server-side session record backing every JWT — required for real logout/reset invalidation |
 | `passwordResetTokens` | Hashed, short-lived, TTL-indexed reset tokens (forgot-password flow) |
 | `mentorProfiles` | Public mentor data: pricing, experience, languages, verification summary, denormalized search fields |
-| `verificationSubmissions` | Mentor verification uploads + reviewer decisions, for the admin queue |
+| `verificationSubmissions` | One verification application per mentor (personal info, education, experience, declaration) + reviewer decisions and history, for the admin queue |
+| `mentorDocuments` | Mentor verification files (certificates, resume, government ID), stored AES-256-GCM encrypted; served only to the owner and admins |
 | `categories` | Mentorship categories/hierarchy |
 | `availabilityRules` | Recurring weekly availability windows |
 | `availabilityExceptions` | Date-specific overrides (leave, blackout dates) |
@@ -259,6 +260,10 @@ GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 GOOGLE_REDIRECT_URI=https://your-app.onrender.com/api/auth/google/callback
 
 # Optional: footer contact details and social links (empty ones are hidden)
+# Optional but recommended in production: key used to encrypt mentor verification documents.
+# If unset it is derived from JWT_SECRET. Do not change it later without re-encrypting stored files.
+DOCUMENT_ENCRYPTION_KEY=
+
 NEXT_PUBLIC_CONTACT_EMAIL=
 NEXT_PUBLIC_CONTACT_PHONE=
 NEXT_PUBLIC_CONTACT_LOCATION=
@@ -277,6 +282,7 @@ Required env vars:
 - `GOOGLE_CLIENT_ID` — Server-side Google OAuth client ID used when exchanging tokens and handling OAuth redirects.
 - `GOOGLE_CLIENT_SECRET` — Server-side Google OAuth client secret.
 - `GOOGLE_REDIRECT_URI` — Fully qualified redirect URI for the Google OAuth callback route.
+- `DOCUMENT_ENCRYPTION_KEY` — Optional. Secret used to encrypt mentor verification documents at rest (AES-256-GCM). Falls back to a key derived from `JWT_SECRET`. Losing or changing it makes already-uploaded documents unreadable.
 - `NEXT_PUBLIC_CONTACT_*`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_*_URL` — Optional public footer details (email, phone, location, WhatsApp number with country code, social profile links). These are public by design; never put secrets in `NEXT_PUBLIC_` variables.
 
 On Render:
@@ -329,9 +335,9 @@ On Render:
 Still need explicit sign-off before/while building the related feature — see `docs/GuideShala-architecture.md` §20 for the full list. Notable ones:
 
 - V1 session modes: `VIDEO` + `IN_PERSON` only?
-- Media storage provider for avatars/verification docs
+- Media storage provider for avatars (verification documents are currently stored encrypted in MongoDB, 5 MB per file; move to S3/R2 if volume grows)
 - Is forgot-password in V1 or deferred?
-- Staged mentor profile completion vs. full profile at signup?
+- ~~Staged mentor profile completion vs. full profile at signup?~~ Decided: mentors sign up with just name/email, then complete the long verification form (§15).
 - Review publication: immediate or moderated?
 - Category selection: single vs. multi-select on mentor profile?
 
@@ -350,7 +356,78 @@ Until confirmed, the architecture docs define the safest buildable defaults, and
 - **Trust content:** no invented ratings, review counts or testimonials. The home page shows the founders (photos in `public/images/team/`) and the mission and vision. Add real reviews only after real sessions are completed.
 - **Feedback:** `FeedbackForm` posts to `POST /api/feedback`. Replace the logging in that route with a database write or an email notification.
 
-## 14. Source Documents
+## 14. Mentor Verification
+
+Only **verified** mentors appear on the portal. A mentor signs up as before, then completes an application that an admin reviews.
+
+### Flow
+
+```text
+Mentor signs up (role MENTOR)
+  -> /mentor/profile: long form, saved as a private draft
+       1 Personal info   2 Public profile   3 Education   4 Past experience   5 Documents + declaration
+  -> Submit for review      (status PENDING_REVIEW, form locked, admins notified)
+  -> /admin/mentors/[id]: admin reads everything, opens documents, ticks the identity / education / experience checks
+       Approve         -> public profile fields are copied onto the mentor profile, verified = true, mentor is listed
+       Request changes -> mentor edits and re-submits (a live profile stays live)
+       Reject          -> mentor is hidden (verified = false) and can re-apply
+       Remove (revoke) -> a verified mentor is taken off the portal
+  -> Mentor is notified in-app for every decision
+```
+
+Key rules:
+
+- **Seekers only see verified mentors.** `verified: true` and `active: true` are required by the mentor list, mentor profile page, favorites and booking creation.
+- **Drafts never go public.** The application is a proposal; the public `mentorProfiles` fields only change when an admin approves.
+- **Editing after approval.** A verified mentor can edit and re-submit. Their current profile stays live until the admin approves the changes.
+- **Required to submit:** full personal details (18+), headline, bio of at least 100 characters, category, experience, price, at least one language, one education entry, one past experience entry, resume, government ID (with ID type), at least one certificate, and the declaration.
+- **Documents:** PDF, JPG or PNG up to 5 MB each (up to 10 certificates). The real file type is checked from the file contents, files are encrypted before being stored, and `GET /api/documents/[id]` only answers to the owning mentor or an admin.
+- **Existing mentors:** profiles already marked `verified: true` before this feature stay live (status shown as Verified). Unverified profiles are hidden until approved. No data migration is needed.
+
+### Status values
+
+`NOT_SUBMITTED` -> `PENDING_REVIEW` -> `APPROVED` | `CHANGES_REQUESTED` | `REJECTED`. The status is stored on both the application (`verificationSubmissions`) and as a summary on the mentor profile (`verificationStatus`); `verified` stays the single public flag.
+
+### API
+
+| Method + route | Who | Purpose |
+| --- | --- | --- |
+| `GET /api/mentor/profile` | Mentor | Load the application, status and uploaded document list |
+| `PUT /api/mentor/profile` | Mentor | Save a draft |
+| `POST /api/mentor/profile/submit` | Mentor | Validate and submit for review |
+| `POST /api/mentor/documents` | Mentor | Upload a document (`multipart/form-data`: `type` = `CERTIFICATE` / `RESUME` / `GOV_ID`, `file`) |
+| `DELETE /api/mentor/documents/[id]` | Mentor | Remove an uploaded document |
+| `GET /api/documents/[id]` | Owner or admin | View a document |
+| `GET /api/admin/mentors?status=` | Admin | Review queue, filterable by status |
+| `GET /api/admin/mentors/[id]` | Admin | Full application and document list |
+| `POST /api/admin/mentors/[id]/decision` | Admin | `{ decision: APPROVE / REQUEST_CHANGES / REJECT / REVOKE, note, checklist }` |
+
+### Code map
+
+```text
+src/features/mentor-profiles/   constants.js, validators.js, server/service.js, components/MentorApplicationForm.js
+src/features/admin/             server/mentorVerificationService.js, components/MentorReviewActions.js
+src/server/models/              mentorVerification.js, mentorDocument.js (+ new fields on mentorProfile.js)
+src/server/repositories/        mentorVerifications.js, mentorDocuments.js
+src/server/security/            documentCrypto.js
+src/app/(protected)/mentor/profile/page.js        mentor application page
+src/app/(protected)/admin/mentors/                review queue + [id] review page
+```
+
+## 15. Applying an Update Package (script)
+
+Updates can be delivered as a zip plus a small Node script. Put both in your **Downloads** folder, then from the project root (the folder that contains `src/`):
+
+```bash
+node ~/Downloads/apply-guideshala-update.mjs              # apply the newest guideshala-mentor-verification*.zip in Downloads
+node ~/Downloads/apply-guideshala-update.mjs --dry-run    # show what would change, write nothing
+node ~/Downloads/apply-guideshala-update.mjs --undo       # restore the files from the last run
+node ~/Downloads/apply-guideshala-update.mjs --zip /path/to/update.zip   # use a specific zip
+```
+
+On Windows PowerShell use `node $HOME\Downloads\apply-guideshala-update.mjs`. The script lists every file as `new`, `changed` or `same`, backs up each file it overwrites into `.update-backup/<timestamp>/`, and never writes outside the project folder. Add `.update-backup/` to `.gitignore`. After applying, restart `npm run dev`.
+
+## 16. Source Documents
 
 The full, unabridged versions of everything summarized above:
 

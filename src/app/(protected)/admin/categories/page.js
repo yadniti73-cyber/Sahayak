@@ -1,7 +1,12 @@
-import { DashboardShell, ButtonLink, SectionHeading } from "@/components";
+import { DashboardShell, ButtonLink, EmptyState, SectionHeading } from "@/components";
 import { CategoryGrid } from "@/components/page-sections";
+import { requirePageAccess } from "@/server/auth/route-guards";
+import { getAdminCategories } from "@/server/dashboard/queries";
 
-export default function AdminCategoriesPage() {
+export default async function AdminCategoriesPage() {
+  await requirePageAccess(["ADMIN"]);
+  const categories = await getAdminCategories();
+
   return (
     <DashboardShell role="admin" title="Categories">
       <div className="grid gap-6">
@@ -13,7 +18,11 @@ export default function AdminCategoriesPage() {
           />
           <ButtonLink href="/admin/categories">Add category</ButtonLink>
         </div>
-        <CategoryGrid />
+        {categories.length === 0 ? (
+          <EmptyState title="No categories yet" description="Categories stored in the database will be listed here." />
+        ) : (
+          <CategoryGrid items={categories} />
+        )}
       </div>
     </DashboardShell>
   );

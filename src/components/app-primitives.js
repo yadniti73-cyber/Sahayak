@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Star } from "lucide-react";
+import { ArrowRight, Circle, CheckCircle2, Star } from "lucide-react";
 
 export function ButtonLink({ href, children, variant = "primary", className = "" }) {
   const styles = {
@@ -111,10 +111,11 @@ export function Rating({ value, reviews }) {
   );
 }
 
-export function CheckItem({ children }) {
+export function CheckItem({ children, done = true }) {
+  const Icon = done ? CheckCircle2 : Circle;
   return (
-    <div className="flex gap-3 text-sm text-app-muted">
-      <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
+    <div className={`flex gap-3 text-sm ${done ? "text-app-muted" : "text-slate-400"}`}>
+      <Icon size={18} className={`mt-0.5 shrink-0 ${done ? "text-emerald-600" : "text-slate-300"}`} aria-hidden="true" />
       <span>{children}</span>
     </div>
   );
@@ -128,5 +129,15 @@ export function ProgressBar({ value }) {
         style={{ width: `${value}%` }}
       />
     </div>
+  );
+}
+
+export function EmptyState({ title, description, action }) {
+  return (
+    <Panel className="text-center">
+      <h2 className="text-lg font-bold text-app-text">{title}</h2>
+      {description ? <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-app-muted">{description}</p> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
+    </Panel>
   );
 }

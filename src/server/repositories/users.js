@@ -20,3 +20,7 @@ export async function findUserByProvider(provider, providerId) {
 export async function updateUser(id, updates) {
   return User.findByIdAndUpdate(id, updates, { new: true }).lean();
 }
+
+export async function findUsersByRole(role) {
+  return User.find({ role, status: "ACTIVE" }, { _id: 1 }).lean();
+}

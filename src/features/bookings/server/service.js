@@ -31,7 +31,7 @@ export async function createBookingRequest(seekerId, payload) {
   await connectMongo();
 
   const mentorProfile = await findMentorById(parsed.mentorProfileId);
-  if (!mentorProfile || !mentorProfile.active) {
+  if (!mentorProfile || !mentorProfile.active || !mentorProfile.verified) {
     throw new Error("Mentor not found.");
   }
 

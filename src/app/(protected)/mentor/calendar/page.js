@@ -1,34 +1,41 @@
-import { DashboardShell, Badge, Panel, SectionHeading } from "@/components";
+import { DashboardShell, Badge, EmptyState, Panel, SectionHeading } from "@/components";
+import { statusInfo } from "@/components/domain-cards";
+import { requirePageAccess } from "@/server/auth/route-guards";
+import { getMentorUpcomingBookings } from "@/server/dashboard/queries";
 
-const slots = [
-  ["Mon", "10:00 AM", "Career planning", "Confirmed"],
-  ["Tue", "4:00 PM", "Pitch review", "Requested"],
-  ["Wed", "6:30 PM", "Research roadmap", "Confirmed"],
-  ["Fri", "5:00 PM", "Open guidance slot", "Open"],
-];
+export default async function MentorCalendarPage() {
+  const user = await requirePageAccess(["MENTOR"]);
+  const sessions = await getMentorUpcomingBookings(user.id);
 
-export default function MentorCalendarPage() {
   return (
     <DashboardShell role="mentor" title="Calendar">
       <div className="grid gap-6">
         <SectionHeading
           eyebrow="Calendar"
-          title="Your week at a glance"
-          description="A lightweight schedule view for confirmed sessions, pending requests, and open slots."
+          title="Your upcoming sessions"
+          description="Confirmed sessions and pending requests, soonest first."
         />
-        <div className="grid gap-4 md:grid-cols-2">
-          {slots.map(([day, time, title, status]) => (
-            <Panel key={`${day}-${time}`}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-app-primary">{day} at {time}</p>
-                  <h2 className="mt-2 font-bold">{title}</h2>
-                </div>
-                <Badge tone={status === "Open" ? "gray" : status === "Requested" ? "amber" : "green"}>{status}</Badge>
-              </div>
-            </Panel>
-          ))}
-        </div>
+        {sessions.length === 0 ? (
+          <EmptyState title="Nothing scheduled" description="Confirmed sessions and pending requests will show up here." />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {sessions.map((s) => {
+              const [label, tone] = statusInfo(s.status);
+              return (
+                <Panel key={s.id}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-app-primary">{s.date} at {s.time}</p>
+                      <h2 className="mt-2 font-bold">{s.topic}</h2>
+                      <p className="mt-1 text-sm text-app-muted">{s.mentor}</p>
+                    </div>
+                    <Badge tone={tone}>{label}</Badge>
+                  </div>
+                </Panel>
+              );
+            })}
+          </div>
+        )}
       </div>
     </DashboardShell>
   );
