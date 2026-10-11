@@ -2,12 +2,19 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { loginWithGoogleIdToken } from "@/features/auth/server/service";
 import { setAuthCookie } from "@/server/auth/cookies";
-import { appConfig } from "@/server/config";
+import { appConfig, PRODUCTION_REDIRECT_URIS } from "@/server/config";
+
+function resolveRedirectUri(request) {
+  if (appConfig.google.redirectUri) return appConfig.google.redirectUri;
+  const origin = new URL(request.url).origin;
+  const match = PRODUCTION_REDIRECT_URIS.find((uri) => uri.startsWith(origin));
+  return match || new URL("/api/auth/google/callback", request.url).toString();
+}
 
 // GET /api/auth/google — redirects the browser to Google's consent screen.
 export async function GET(request) {
   const clientId = appConfig.google.clientId;
-  const redirectUri = appConfig.google.redirectUri || new URL("/api/auth/google/callback", request.url).toString();
+  const redirectUri = resolveRedirectUri(request);
 
   if (!clientId) {
     return NextResponse.json(

@@ -1,5 +1,11 @@
-const googleRedirectUri = process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/auth/google/callback";
-const cookieSecure = googleRedirectUri.startsWith("https://");
+const isDev = process.env.NODE_ENV === "development";
+export const PRODUCTION_REDIRECT_URIS = [
+  "https://guideshala.com/api/auth/google/callback",
+  "https://guideshala.in/api/auth/google/callback",
+  "https://sahayak-india.onrender.com/api/auth/google/callback",
+];
+const googleRedirectUri = isDev ? "http://localhost:3000/api/auth/google/callback" : "";
+const cookieSecure = !isDev;
 const isProductionBuild = process.env.NODE_ENV === "production" || cookieSecure;
 const DEFAULT_JWT_SECRET = "change-this-secret";
 
