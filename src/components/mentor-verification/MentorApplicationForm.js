@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Circle, FileText, Loader2, Plus, Save, Send, Trash2, Upload } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Circle, FileText, Loader2, Plus, Save, Send, Trash2, Upload } from "lucide-react";
 import { Panel } from "@/components/app-primitives";
 import { VerificationBanner } from "@/components/mentor-verification/VerificationBanner";
 import {
@@ -36,13 +36,23 @@ function Field({ label, hint, required, children, className = "" }) {
   );
 }
 
-function Section({ id, step, title, description, children }) {
+// One entry per step. `keys` are the parts of the saved payload that belong to the step.
+const STEPS = [
+  { id: "personal", label: "Personal info", keys: ["personal"] },
+  { id: "profile", label: "Public profile", keys: ["profile"] },
+  { id: "experience", label: "Experience", keys: ["workExperience"] },
+  { id: "education", label: "Education", keys: ["education"] },
+  { id: "documents", label: "Documents", keys: [] }, // files upload instantly, nothing to save
+  { id: "declaration", label: "Submit", keys: ["declarationAccepted"] },
+];
+
+function Section({ id, step, total, title, description, children }) {
   return (
     <Panel className="scroll-mt-24">
-      <section id={id}>
+      <section id={id} aria-labelledby={`${id}-title`}>
         <div className="mb-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-green-700">Step {step}</p>
-          <h2 className="mt-1 text-xl font-bold text-app-text">{title}</h2>
+          <p className="text-xs font-semibold uppercase tracking-wide text-green-700">Step {step} of {total}</p>
+          <h2 id={`${id}-title`} tabIndex={-1} className="mt-1 text-xl font-bold text-app-text outline-none">{title}</h2>
           {description ? <p className="mt-1 text-sm text-app-muted">{description}</p> : null}
         </div>
         {children}
@@ -148,7 +158,10 @@ export function MentorApplicationForm({ initial, categories = [] }) {
   const [langText, setLangText] = useState(initial.profile.languages.join(", "));
   const [specText, setSpecText] = useState(initial.profile.specializations.join(", "));
   const [busy, setBusy] = useState("");
-  const [msg, setMsg] = useState(null); // { type: "ok" | "error", text, details? }
+  const [msg, setMsg] = useState(null); // { type: "ok" | "error", text, details?, step? }
+  const [stepIndex, setStepIndex] = useState(0);
+  const [justSaved, setJustSaved] = useState({}); // step id -> true after a save in this visit
+  const [attempted, setAttempted] = useState({}); // step id -> true once the user tried to leave it
   const savedSensitive = useRef(sensitiveSnapshot(initial));
 
   const locked = !app.editable;
@@ -164,7 +177,26 @@ export function MentorApplicationForm({ initial, categories = [] }) {
     },
   });
 
-  const issues = checkSubmitReadiness(payload(), app.documents);
+  // Last version stored on the server. A section save only overwrites that section's keys with
+  // the on-screen values, so unsaved edits in other sections are never saved by accident.
+  const savedPayload = useRef(payload());
+
+  const current = payload();
+  const issues = checkSubmitReadiness(current, app.documents);
+  const issuesBySection = (s) => issues.filter((i) => i.section === s);
+  const isDirty = (step) => step.keys.some((k) => JSON.stringify(current[k]) !== JSON.stringify(savedPayload.current[k]));
+
+  const step = STEPS[stepIndex];
+  const stepDirty = isDirty(step);
+  const anyDirty = STEPS.some(isDirty);
+
+  // Warn if the tab is closed with unsaved edits.
+  useEffect(() => {
+    if (!anyDirty) return undefined;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [anyDirty]);
 
   const setSection = (section, key) => (e) => setData((d) => ({ ...d, [section]: { ...d[section], [key]: e.target.value } }));
   const setItem = (section, i, key, value) =>
@@ -187,8 +219,16 @@ export function MentorApplicationForm({ initial, categories = [] }) {
 
   const showError = (e) => setMsg({ type: "error", text: e.message, details: (e.details || []).map((d) => d.message).filter(Boolean) });
 
-  async function save({ quiet = false } = {}) {
-    const body = payload();
+  /**
+   * Saves one step (keys given) or the whole form (keys omitted).
+   * The server stores the whole draft in one PUT, so we send the last saved version
+   * with this step's values swapped in.
+   */
+  async function save(keys, { quiet = false } = {}) {
+    const live = payload();
+    const body = keys ? { ...savedPayload.current } : live;
+    if (keys) keys.forEach((k) => { body[k] = live[k]; });
+
     const sensitiveChanged = sensitiveSnapshot(body) !== savedSensitive.current;
     if (approved && sensitiveChanged && !window.confirm("Changing personal details, experience or education takes your profile offline until our team approves it again. Continue?")) {
       return false;
@@ -199,17 +239,21 @@ export function MentorApplicationForm({ initial, categories = [] }) {
       body: JSON.stringify(body),
     });
     setApp(result.application);
+    savedPayload.current = body;
     savedSensitive.current = sensitiveSnapshot(body);
-    if (!quiet) setMsg({ type: "ok", text: "Draft saved." });
+    if (!quiet) setMsg({ type: "ok", text: `${step.label} saved.`, step: step.id });
     return true;
   }
 
-  async function onSave() {
+  async function onSaveStep() {
     setMsg(null);
+    setAttempted((a) => ({ ...a, [step.id]: true }));
     setBusy("save");
     try {
-      await save();
-      router.refresh();
+      if (await save(step.keys)) {
+        setJustSaved((s) => ({ ...s, [step.id]: true }));
+        router.refresh();
+      }
     } catch (e) {
       showError(e);
     } finally {
@@ -221,11 +265,12 @@ export function MentorApplicationForm({ initial, categories = [] }) {
     setMsg(null);
     setBusy("submit");
     try {
-      const saved = await save({ quiet: true });
+      const saved = await save(null, { quiet: true });
       if (!saved) return;
+      setJustSaved(Object.fromEntries(STEPS.map((s) => [s.id, true])));
       const result = await request("/api/mentor/application/submit", { method: "POST" });
       setApp(result.application);
-      setMsg({ type: "ok", text: "Submitted. Our team will review your details and get back to you." });
+      setMsg({ type: "ok", text: "Submitted. Our team will review your details and get back to you.", step: "declaration" });
       topRef.current?.scrollIntoView({ behavior: "smooth" });
       router.refresh();
     } catch (e) {
@@ -264,8 +309,71 @@ export function MentorApplicationForm({ initial, categories = [] }) {
     }
   }
 
+  // Moving between steps never discards edits (they live in this component), but we warn
+  // that they are not saved yet.
+  function goTo(target) {
+    if (target === stepIndex || target < 0 || target >= STEPS.length) return;
+    if (stepDirty && !window.confirm("You have unsaved changes in this section. They will stay on this page, but are not saved to your draft yet. Leave anyway?")) return;
+    setAttempted((a) => ({ ...a, [step.id]: true }));
+    setMsg(null);
+    setStepIndex(target);
+    requestAnimationFrame(() => {
+      topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById(`${STEPS[target].id}-title`)?.focus({ preventScroll: true });
+    });
+  }
+  const goToId = (id) => goTo(STEPS.findIndex((s) => s.id === id));
+
   const maxDob = new Date(Date.now() - 18 * 365.25 * 864e5).toISOString().slice(0, 10);
-  const issuesBySection = (s) => issues.filter((i) => i.section === s);
+  const total = STEPS.length;
+  const sectionIssues = issuesBySection(step.id);
+  const showSectionIssues = Boolean(attempted[step.id]);
+
+  const saveButtonLabel = busy === "save" ? "Saving..." : approved ? `Save ${step.label.toLowerCase()}` : "Save section";
+
+  // Plain render helpers (not components) so inputs never remount.
+  const SaveBar = () => ( // plain render helpers, not components, so inputs never remount
+    <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-app-border pt-5">
+      {step.keys.length && !locked && step.id !== "declaration" ? (
+        <button type="button" onClick={onSaveStep} disabled={Boolean(busy) || !stepDirty} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-green-600 bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50">
+          {busy === "save" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
+          {saveButtonLabel}
+        </button>
+      ) : null}
+      {step.keys.length && !locked && step.id !== "declaration" ? (
+        <span className="text-sm text-app-muted" aria-live="polite">
+          {stepDirty ? "Unsaved changes" : justSaved[step.id] ? "Saved ✓" : "No changes to save"}
+        </span>
+      ) : null}
+      <div className="ml-auto flex flex-wrap gap-3">
+        <button type="button" onClick={() => goTo(stepIndex - 1)} disabled={stepIndex === 0 || Boolean(busy)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-app-primary hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50">
+          <ArrowLeft size={16} aria-hidden="true" /> Back
+        </button>
+        {stepIndex < total - 1 ? (
+          <button type="button" onClick={() => goTo(stepIndex + 1)} disabled={Boolean(busy)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-app-primary hover:bg-blue-50 disabled:opacity-60">
+            Next <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const StepNotices = () => (
+    <>
+      {showSectionIssues && sectionIssues.length && !approved ? (
+        <div className="mt-5 rounded-lg bg-amber-50 p-4 text-sm text-amber-900" role="status">
+          <p className="flex items-center gap-2 font-semibold"><AlertCircle size={16} aria-hidden="true" /> Still needed in this section before you can submit</p>
+          <ul className="mt-2 list-disc pl-5">{sectionIssues.map((i, n) => <li key={n}>{i.message}</li>)}</ul>
+        </div>
+      ) : null}
+      {msg && msg.step !== "declaration" ? (
+        <div className={`mt-5 rounded-lg p-4 text-sm ${msg.type === "ok" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`} role={msg.type === "ok" ? "status" : "alert"}>
+          <p className="font-semibold">{msg.text}</p>
+          {msg.details?.length ? <ul className="mt-1 list-disc pl-5">{msg.details.map((d, n) => <li key={n}>{d}</li>)}</ul> : null}
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
     <div className="grid gap-6" ref={topRef}>
@@ -277,17 +385,46 @@ export function MentorApplicationForm({ initial, categories = [] }) {
         </p>
       ) : null}
 
-      <nav aria-label="Application sections" className="flex flex-wrap gap-2 text-sm">
-        {[["personal", "Personal info"], ["profile", "Public profile"], ["experience", "Experience"], ["education", "Education"], ["documents", "Documents"], ["declaration", "Submit"]].map(([id, label], i) => (
-          <a key={id} href={`#${id}`} className="rounded-full border border-app-border bg-white px-3 py-1.5 font-semibold text-app-text hover:border-green-500 hover:text-green-700">
-            {i + 1}. {label}
-          </a>
-        ))}
-      </nav>
+      {/* Progress + step navigation */}
+      <div>
+        <div className="mb-3 flex items-center justify-between text-sm">
+          <p className="font-semibold text-app-text">Step {stepIndex + 1} of {total}: {step.label}</p>
+          <p className="text-app-muted">{Math.round(((stepIndex + 1) / total) * 100)}%</p>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={stepIndex + 1} aria-label="Application progress">
+          <div className="h-full rounded-full bg-green-600 transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${((stepIndex + 1) / total) * 100}%` }} />
+        </div>
+        <nav aria-label="Application sections" className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1 text-sm">
+          {STEPS.map((s, i) => {
+            const dirty = isDirty(s);
+            const done = !dirty && s.keys.length > 0 && issuesBySection(s.id).length === 0 && s.id !== "declaration";
+            const docsDone = s.id === "documents" && issuesBySection("documents").length === 0;
+            const active = i === stepIndex;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-current={active ? "step" : undefined}
+                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2 font-semibold transition ${active ? "border-green-600 bg-green-50 text-green-800" : "border-app-border bg-white text-app-text hover:border-green-500 hover:text-green-700"}`}
+              >
+                {i + 1}. {s.label}
+                {dirty ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Unsaved</span> : null}
+                {!dirty && (done || docsDone) ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                    <CheckCircle2 size={12} aria-hidden="true" /> {justSaved[s.id] ? "Saved ✓" : "Done"}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-      <fieldset disabled={locked} className="m-0 grid min-w-0 gap-6 border-0 p-0">
-        {/* 1 ---------------------------------------------------------------- */}
-        <Section id="personal" step={1} title="Personal information" description="Private. Only you and the GuideShala review team can see this.">
+      {/* Only the current step is rendered. Data lives in this component, so nothing is lost when switching. */}
+      {step.id === "personal" ? (
+        <fieldset disabled={locked} className="m-0 min-w-0 border-0 p-0">
+          <Section id="personal" step={1} total={total} title="Personal information" description="Private. Only you and the GuideShala review team can see this.">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full name" required><input className="app-input" value={data.personal.fullName} onChange={setSection("personal", "fullName")} maxLength={100} autoComplete="name" /></Field>
             <Field label="Email" hint="Your sign-in email."><input className="app-input bg-slate-50" value={app.email} readOnly disabled /></Field>
@@ -312,10 +449,15 @@ export function MentorApplicationForm({ initial, categories = [] }) {
             </Field>
           </div>
           <p className="mt-3 text-xs text-app-muted">Do not type your ID number here. Upload the document in step 5 instead.</p>
-        </Section>
+            {StepNotices()}
+            {SaveBar()}
+          </Section>
+        </fieldset>
+      ) : null}
 
-        {/* 2 ---------------------------------------------------------------- */}
-        <Section id="profile" step={2} title="Public profile" description="This is what seekers see on your mentor page once you are verified.">
+      {step.id === "profile" ? (
+        <fieldset disabled={locked} className="m-0 min-w-0 border-0 p-0">
+          <Section id="profile" step={2} total={total} title="Public profile" description="This is what seekers see on your mentor page once you are verified.">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Professional headline" required className="sm:col-span-2"><input className="app-input" value={data.profile.headline} onChange={setSection("profile", "headline")} maxLength={120} placeholder="e.g. Career coach for first-generation graduates" /></Field>
             <Field label="About you" required hint={`${data.profile.bio.length}/2000 - at least 50 characters`} className="sm:col-span-2">
@@ -338,10 +480,15 @@ export function MentorApplicationForm({ initial, categories = [] }) {
             <Field label="Session price" required><input className="app-input" value={data.profile.price} onChange={setSection("profile", "price")} maxLength={40} placeholder="e.g. Rs 500 / session" /></Field>
             <Field label="Availability" required className="sm:col-span-2"><input className="app-input" value={data.profile.availability} onChange={setSection("profile", "availability")} maxLength={120} placeholder="e.g. Weekdays after 6 PM, Sat mornings" /></Field>
           </div>
-        </Section>
+            {StepNotices()}
+            {SaveBar()}
+          </Section>
+        </fieldset>
+      ) : null}
 
-        {/* 3 ---------------------------------------------------------------- */}
-        <Section id="experience" step={3} title="Past work experience" description="List your relevant roles, most recent first. At least one is required.">
+      {step.id === "experience" ? (
+        <fieldset disabled={locked} className="m-0 min-w-0 border-0 p-0">
+          <Section id="experience" step={3} total={total} title="Past work experience" description="List your relevant roles, most recent first. At least one is required.">
           <div className="grid gap-4">
             {data.workExperience.map((w, i) => (
               <div key={i} className="grid gap-4 rounded-lg border border-app-border p-4 sm:grid-cols-2">
@@ -364,10 +511,15 @@ export function MentorApplicationForm({ initial, categories = [] }) {
             ))}
             <button type="button" onClick={() => addItem("workExperience", emptyWork)} className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-app-primary hover:bg-blue-50"><Plus size={16} aria-hidden="true" /> Add experience</button>
           </div>
-        </Section>
+            {StepNotices()}
+            {SaveBar()}
+          </Section>
+        </fieldset>
+      ) : null}
 
-        {/* 4 ---------------------------------------------------------------- */}
-        <Section id="education" step={4} title="Education" description="Add your degrees and qualifications. At least one is required.">
+      {step.id === "education" ? (
+        <fieldset disabled={locked} className="m-0 min-w-0 border-0 p-0">
+          <Section id="education" step={4} total={total} title="Education" description="Add your degrees and qualifications. At least one is required.">
           <div className="grid gap-4">
             {data.education.map((e, i) => (
               <div key={i} className="grid gap-4 rounded-lg border border-app-border p-4 sm:grid-cols-2">
@@ -385,65 +537,84 @@ export function MentorApplicationForm({ initial, categories = [] }) {
             ))}
             <button type="button" onClick={() => addItem("education", emptyEdu)} className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-app-primary hover:bg-blue-50"><Plus size={16} aria-hidden="true" /> Add education</button>
           </div>
-        </Section>
-      </fieldset>
+            {StepNotices()}
+            {SaveBar()}
+          </Section>
+        </fieldset>
+      ) : null}
 
-      {/* 5: documents stay usable while editable; uploads save instantly ------ */}
-      <Section id="documents" step={5} title="Documents" description="PDF, JPG or PNG, up to 4 MB each. Only you and the review team can open these files.">
+      {/* Documents stay usable while editable; uploads save instantly */}
+      {step.id === "documents" ? (
+        <Section id="documents" step={5} total={total} title="Documents" description="PDF, JPG or PNG, up to 4 MB each. Only you and the review team can open these files.">
         <div className="grid gap-4">
           {["RESUME", "CERTIFICATE", "GOV_ID", "OTHER"].map((type) => (
             <DocumentSlot key={type} type={type} documents={app.documents} disabled={locked} onUpload={onUpload} onRemove={onRemove} />
           ))}
         </div>
         <p className="mt-3 text-xs text-app-muted">Files upload as soon as you choose them. You do not need to save the form first.</p>
-      </Section>
+          {StepNotices()}
+          {SaveBar()}
+        </Section>
+      ) : null}
 
-      <Section id="declaration" step={6} title="Review and submit">
-        <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" className="mt-1 h-4 w-4" disabled={locked} checked={data.declarationAccepted} onChange={(e) => setData((d) => ({ ...d, declarationAccepted: e.target.checked }))} />
-          <span>I confirm that the information and documents I have provided are true and belong to me, and I agree that GuideShala may verify them.</span>
-        </label>
+      {step.id === "declaration" ? (
+        <Section id="declaration" step={6} total={total} title="Review and submit">
+          <label className="flex items-start gap-3 text-sm">
+            <input type="checkbox" className="mt-1 h-4 w-4" disabled={locked} checked={data.declarationAccepted} onChange={(e) => setData((d) => ({ ...d, declarationAccepted: e.target.checked }))} />
+            <span>I confirm that the information and documents I have provided are true and belong to me, and I agree that GuideShala may verify them.</span>
+          </label>
 
-        {!approved && !locked ? (
-          <div className="mt-5 rounded-lg bg-slate-50 p-4">
-            <p className="text-sm font-semibold">{issues.length ? `${issues.length} thing${issues.length === 1 ? "" : "s"} left before you can submit` : "Everything is filled in. You can submit now."}</p>
-            {issues.length ? (
-              <ul className="mt-2 grid gap-1 text-sm text-app-muted">
-                {issues.map((i, n) => (
-                  <li key={n}><a href={`#${i.section}`} className="hover:text-app-primary hover:underline">{i.message}</a></li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        ) : null}
+          {!approved && !locked ? (
+            <div className="mt-5 rounded-lg bg-slate-50 p-4">
+              <p className="text-sm font-semibold">{issues.length ? `${issues.length} thing${issues.length === 1 ? "" : "s"} left before you can submit` : "Everything is filled in. You can submit now."}</p>
+              {issues.length ? (
+                <ul className="mt-2 grid gap-1 text-sm text-app-muted">
+                  {issues.map((i, n) => (
+                    <li key={n}><button type="button" onClick={() => goToId(i.section)} className="text-left hover:text-app-primary hover:underline">{i.message}</button></li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
 
-        {msg ? (
-          <div className={`mt-5 rounded-lg p-4 text-sm ${msg.type === "ok" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`} role={msg.type === "ok" ? "status" : "alert"}>
-            <p className="font-semibold">{msg.text}</p>
-            {msg.details?.length ? <ul className="mt-1 list-disc pl-5">{msg.details.map((d, n) => <li key={n}>{d}</li>)}</ul> : null}
-          </div>
-        ) : null}
+          {anyDirty && !locked ? (
+            <p className="mt-4 text-sm text-amber-800" role="status">Some sections have unsaved changes. Submitting saves everything on this page first.</p>
+          ) : null}
 
-        {!locked ? (
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button type="button" onClick={onSave} disabled={Boolean(busy)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-app-primary hover:bg-blue-50 disabled:opacity-60">
-              {busy === "save" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
-              {busy === "save" ? "Saving..." : approved ? "Save changes" : "Save draft"}
-            </button>
-            {!approved ? (
-              <button type="button" onClick={onSubmit} disabled={Boolean(busy) || issues.length > 0} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-green-600 bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50">
-                {busy === "submit" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
-                {busy === "submit" ? "Submitting..." : app.status === "DRAFT" ? "Submit for verification" : "Resubmit for verification"}
+          {msg ? (
+            <div className={`mt-5 rounded-lg p-4 text-sm ${msg.type === "ok" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`} role={msg.type === "ok" ? "status" : "alert"}>
+              <p className="font-semibold">{msg.text}</p>
+              {msg.details?.length ? <ul className="mt-1 list-disc pl-5">{msg.details.map((d, n) => <li key={n}>{d}</li>)}</ul> : null}
+            </div>
+          ) : null}
+
+          {!locked ? (
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button type="button" onClick={onSaveStep} disabled={Boolean(busy) || !stepDirty} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-app-primary hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60">
+                {busy === "save" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
+                {busy === "save" ? "Saving..." : approved ? "Save changes" : "Save section"}
               </button>
-            ) : null}
+              {!approved ? (
+                <button type="button" onClick={onSubmit} disabled={Boolean(busy) || issues.length > 0} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-green-600 bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50">
+                  {busy === "submit" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
+                  {busy === "submit" ? "Submitting..." : app.status === "DRAFT" ? "Submit for verification" : "Resubmit for verification"}
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-app-muted">Your application is with our review team. We will notify you as soon as there is a decision.</p>
+          )}
+          {app.status === "DRAFT" && approved === false && app.history?.some((h) => h.action === "edited_after_approval") ? (
+            <p className="mt-3 text-xs text-app-muted">Your earlier verification was paused because verified details changed. Submit again to go live.</p>
+          ) : null}
+
+          <div className="mt-6 border-t border-app-border pt-5">
+            <button type="button" onClick={() => goTo(stepIndex - 1)} disabled={Boolean(busy)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-app-primary hover:bg-blue-50 disabled:opacity-60">
+              <ArrowLeft size={16} aria-hidden="true" /> Back
+            </button>
           </div>
-        ) : (
-          <p className="mt-5 text-sm text-app-muted">Your application is with our review team. We will notify you as soon as there is a decision.</p>
-        )}
-        {app.status === "DRAFT" && approved === false && app.history?.some((h) => h.action === "edited_after_approval") ? (
-          <p className="mt-3 text-xs text-app-muted">Your earlier verification was paused because verified details changed. Submit again to go live.</p>
-        ) : null}
-      </Section>
+        </Section>
+      ) : null}
     </div>
   );
 }
