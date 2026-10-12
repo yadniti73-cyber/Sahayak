@@ -2,17 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  BookOpen, Briefcase, Code2, GraduationCap, HeartPulse, LineChart, Scale, Sprout, Users,
-} from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { categoryIconMap } from "./category-icons";
 import { categoryImages, withParams } from "./category-images";
-
-const iconMap = { Briefcase, GraduationCap, HeartPulse, Sprout, LineChart, Scale, Users, Code2, BookOpen };
 
 export function CategoryImageCard({ category }) {
   const [failed, setFailed] = useState(false);
   const src = withParams(categoryImages[category.icon]);
-  const Icon = iconMap[category.icon] || BookOpen;
+  const Icon = categoryIconMap[category.icon] || BookOpen;
 
   return (
     <Link

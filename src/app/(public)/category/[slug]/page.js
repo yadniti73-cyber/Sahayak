@@ -1,19 +1,14 @@
 import { notFound } from "next/navigation";
 import { PublicShell, ButtonLink, EmptyState, SectionHeading } from "@/components";
 import { MentorGrid } from "@/components/page-sections";
-import { getMentors } from "@/features/catalog/server/service";
-import { categories } from "@/lib/frontend-data";
+import { getCategoryBySlug, getMentors } from "@/features/catalog/server/service";
 
 // Re-check the database regularly; approvals also revalidate this page immediately.
 export const revalidate = 60;
 
-export async function generateStaticParams() {
-  return categories.map((category) => ({ slug: category.slug }));
-}
-
 export default async function CategoryDetailPage({ params }) {
   const { slug } = await params;
-  const category = categories.find((item) => item.slug === slug);
+  const category = await getCategoryBySlug(slug);
 
   if (!category) {
     notFound();

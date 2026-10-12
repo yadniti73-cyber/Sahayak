@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { connectMongo } from "@/server/db/mongo";
 import { Booking } from "@/server/models/booking";
 import { Category } from "@/server/models/category";
+import { ensureDefaultCategories } from "@/server/repositories/categories";
 import { Favorite } from "@/server/models/favorite";
 import { MentorApplication } from "@/server/models/mentorApplication";
 import { MentorProfile } from "@/server/models/mentorProfile";
@@ -278,6 +279,7 @@ export async function getAdminBookings({ limit = 50 } = {}) {
 
 export async function getAdminCategories() {
   await connectMongo();
+  await ensureDefaultCategories();
   const [categories, mentorCounts] = await Promise.all([
     Category.find({ active: true }).sort({ name: 1 }).lean(),
     MentorProfile.aggregate([{ $match: { active: true, verified: true } }, { $group: { _id: { $toLower: "$category" }, n: { $sum: 1 } } }]),

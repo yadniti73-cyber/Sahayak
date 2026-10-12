@@ -1,4 +1,5 @@
-import { DashboardShell, ButtonLink, EmptyState, SectionHeading } from "@/components";
+import { DashboardShell, EmptyState, SectionHeading } from "@/components";
+import { AddCategoryForm } from "@/components/AddCategoryForm";
 import { CategoryGrid } from "@/components/page-sections";
 import { requirePageAccess } from "@/server/auth/route-guards";
 import { getAdminCategories } from "@/server/dashboard/queries";
@@ -16,7 +17,7 @@ export default async function AdminCategoriesPage() {
             title="Manage mentorship categories"
             description="Categories power discovery, profile classification, filters, and SEO-friendly pages."
           />
-          <ButtonLink href="/admin/categories">Add category</ButtonLink>
+          <AddCategoryForm />
         </div>
         {categories.length === 0 ? (
           <EmptyState title="No categories yet" description="Categories stored in the database will be listed here." />

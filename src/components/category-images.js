@@ -14,6 +14,18 @@ export const categoryImages = {
   Users: "",          // family / parenting
   Code2: "",          // technology
   BookOpen: "",       // arts / learning
+  Brain: "",          // mental health
+  Wallet: "",         // personal finance
+  Landmark: "",       // government jobs
+  Target: "",         // competitive exams
+  Plane: "",          // study abroad
+  FileText: "",       // resume & interviews
+  Heart: "",          // relationships
+  Dumbbell: "",       // fitness & nutrition
+  Home: "",           // real estate
+  Mic: "",            // communication skills
+  Palette: "",        // design & creative
+  Megaphone: "",      // digital marketing
 };
 
 export const withParams = (url) => (url ? (url.includes("?") ? url : url + q) : "");

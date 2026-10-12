@@ -1,31 +1,7 @@
 import Link from "next/link";
-import {
-  BookOpen,
-  Briefcase,
-  CalendarDays,
-  Code2,
-  GraduationCap,
-  HeartPulse,
-  LineChart,
-  MapPin,
-  Scale,
-  Sprout,
-  Users,
-  Video,
-} from "lucide-react";
+import { BookOpen, CalendarDays, MapPin, Video } from "lucide-react";
+import { categoryIconMap } from "./category-icons";
 import { Avatar, Badge, ButtonLink, Panel, Rating } from "./app-primitives";
-
-const iconMap = {
-  Briefcase,
-  GraduationCap,
-  HeartPulse,
-  Sprout,
-  LineChart,
-  Scale,
-  Users,
-  Code2,
-  BookOpen,
-};
 
 // Database values are upper-case (REQUESTED, IN_PERSON...); mock data uses Title case.
 const statusMeta = {
@@ -47,7 +23,7 @@ export function statusInfo(status) {
 export const modeLabel = { VIDEO: "Video", PHONE: "Phone", IN_PERSON: "In person" };
 
 export function CategoryCard({ category }) {
-  const Icon = iconMap[category.icon] || BookOpen;
+  const Icon = categoryIconMap[category.icon] || BookOpen;
 
   return (
     <Link href={`/category/${category.slug}`} className="app-card group block p-5 transition hover:-translate-y-1 hover:shadow-soft">
