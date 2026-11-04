@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Check, Pencil, Trash2, X } from "lucide-react";
+import { BookOpen, Check, MoreVertical, Pencil, Trash2, X } from "lucide-react";
 import { CATEGORY_ICON_NAMES } from "@/lib/category-presets";
 import { categoryIconMap } from "@/components/category-icons";
 
@@ -16,7 +16,8 @@ export function AdminCategoryManager({ categories = [] }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  function startEdit(category) {
+  function startEdit(category, menu) {
+    menu?.removeAttribute("open");
     setEditingSlug(category.slug);
     setForm({ name: category.name || "", description: category.description || "", icon: category.icon || "BookOpen" });
     setError("");
@@ -54,7 +55,8 @@ export function AdminCategoryManager({ categories = [] }) {
     }
   }
 
-  async function deleteCategory(category) {
+  async function deleteCategory(category, menu) {
+    menu?.removeAttribute("open");
     const confirmed = window.confirm(`Delete the category “${category.name}”? This cannot be undone from the admin panel.`);
     if (!confirmed) return;
     setBusy(true);
@@ -107,12 +109,26 @@ export function AdminCategoryManager({ categories = [] }) {
                       <h3 className="font-semibold text-app-text">{category.name}</h3>
                       <p className="mt-1 text-xs text-app-muted">{category.mentorCount || 0} active verified mentors</p>
                     </div>
+                    <details className="relative shrink-0">
+                      <summary
+                        aria-label={`More actions for ${category.name}`}
+                        title="More actions"
+                        className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg text-app-muted transition hover:bg-slate-100 hover:text-app-text focus:outline-none focus-visible:ring-2 focus-visible:ring-app-primary [&::-webkit-details-marker]:hidden"
+                      >
+                        <MoreVertical size={19} aria-hidden="true" />
+                      </summary>
+                      <div className="absolute right-0 top-10 z-20 min-w-40 overflow-hidden rounded-xl border border-app-border bg-white p-1.5 shadow-lg">
+                        <button type="button" disabled={busy} onClick={(event) => startEdit(category, event.currentTarget.closest("details"))} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-app-text transition hover:bg-slate-50 disabled:opacity-50">
+                          <Pencil size={15} /> Edit category
+                        </button>
+                        <button type="button" disabled={busy} onClick={(event) => deleteCategory(category, event.currentTarget.closest("details"))} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50">
+                          <Trash2 size={15} /> Delete category
+                        </button>
+                      </div>
+                    </details>
                   </div>
                   <p className="mt-4 min-h-10 text-sm leading-6 text-app-muted">{category.description || "No description provided."}</p>
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-app-border pt-4">
-                    <button type="button" disabled={busy} onClick={() => startEdit(category)} className="app-button--outline"><Pencil size={15} />Edit</button>
-                    <button type="button" disabled={busy} onClick={() => deleteCategory(category)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"><Trash2 size={15} />Delete</button>
-                  </div>
+                  <div className="mt-4 border-t border-app-border pt-4" />
                 </>
               )}
             </article>
