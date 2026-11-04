@@ -448,8 +448,10 @@ export async function getDocumentForViewer(viewer, docId) {
 /* ------------------------------------------------------------------ admin */
 
 export const ADMIN_FILTERS = ["SUBMITTED", "CHANGES_REQUESTED", "APPROVED", "REJECTED", "DRAFT"];
+// Tabs shown on the admin Mentors page, in display order. "ALL" is a pseudo-status (every mentor).
+export const ADMIN_TABS = ["APPROVED", "ALL", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "DRAFT"];
 
-export async function listMentorApplications({ status = "SUBMITTED", limit = 300 } = {}) {
+export async function listMentorApplications({ status = "APPROVED", limit = 300 } = {}) {
   await connectMongo();
   const profiles = await MentorProfile.find({}).sort({ createdAt: -1 }).limit(limit).lean();
   const userIds = profiles.map((p) => p.userId);
@@ -477,10 +479,13 @@ export async function listMentorApplications({ status = "SUBMITTED", limit = 300
 
   const counts = Object.fromEntries(ADMIN_FILTERS.map((s) => [s, 0]));
   rows.forEach((r) => { counts[r.status] += 1; });
+  counts.ALL = rows.length;
 
-  const filtered = rows
-    .filter((r) => r.status === status)
-    .sort((a, b) => (a.submittedAt || "").localeCompare(b.submittedAt || "")); // oldest submission first
+  const filtered = status === "ALL"
+    ? rows.sort((a, b) => (a.name || "").localeCompare(b.name || "")) // all mentors, A-Z
+    : rows
+        .filter((r) => r.status === status)
+        .sort((a, b) => (a.submittedAt || "").localeCompare(b.submittedAt || "")); // oldest submission first
   return { counts, rows: filtered };
 }
 

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { DashboardShell, Badge, EmptyState, Panel, SectionHeading } from "@/components";
-import { ADMIN_FILTERS, listMentorApplications } from "@/features/mentor-verification/server/service";
+import { ADMIN_TABS, listMentorApplications } from "@/features/mentor-verification/server/service";
 import { STATUS_META } from "@/features/mentor-verification/constants";
 import { requirePageAccess } from "@/server/auth/route-guards";
 
 export const dynamic = "force-dynamic";
 
 const TAB_LABELS = {
+  ALL: "All mentors",
   SUBMITTED: "Needs review",
   CHANGES_REQUESTED: "Changes requested",
   APPROVED: "Verified",
@@ -19,7 +20,7 @@ const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "nu
 export default async function AdminMentorsPage({ searchParams }) {
   await requirePageAccess(["ADMIN"]);
   const params = await searchParams;
-  const status = ADMIN_FILTERS.includes(params?.status) ? params.status : "SUBMITTED";
+  const status = ADMIN_TABS.includes(params?.status) ? params.status : "APPROVED";
   const { counts, rows } = await listMentorApplications({ status });
 
   return (
@@ -32,7 +33,7 @@ export default async function AdminMentorsPage({ searchParams }) {
         />
 
         <nav aria-label="Filter by status" className="flex flex-wrap gap-2">
-          {ADMIN_FILTERS.map((s) => (
+          {ADMIN_TABS.map((s) => (
             <Link
               key={s}
               href={`/admin/mentors?status=${s}`}
