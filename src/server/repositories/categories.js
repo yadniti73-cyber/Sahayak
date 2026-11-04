@@ -1,4 +1,6 @@
 import { Category } from "@/server/models/category";
+import { MentorProfile } from "@/server/models/mentorProfile";
+import { MentorVerification } from "@/server/models/mentorVerification";
 import { CATEGORY_PRESETS } from "@/lib/category-presets";
 
 let defaultsEnsured = false;
@@ -40,4 +42,28 @@ export async function findCategoryByNameOrSlug(name, slug) {
 export async function createCategory(data) {
   const category = new Category(data);
   return category.save();
+}
+
+
+export async function findCategoryBySlugForAdmin(slug) {
+  return Category.findOne({ slug: String(slug || "").toLowerCase().trim(), active: true }).lean();
+}
+
+export async function categoryHasReferences(name) {
+  const escaped = String(name || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const exactName = new RegExp(`^${escaped}$`, "i");
+  const [profile, verification] = await Promise.all([
+    MentorProfile.exists({ category: exactName }),
+    MentorVerification.exists({ "profile.category": exactName }),
+  ]);
+  return Boolean(profile || verification);
+}
+
+export async function renameCategoryReferences(oldName, newName, session) {
+  const escaped = String(oldName || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const exactName = new RegExp(`^${escaped}$`, "i");
+  await Promise.all([
+    MentorProfile.updateMany({ category: exactName }, { $set: { category: newName } }, { session }),
+    MentorVerification.updateMany({ "profile.category": exactName }, { $set: { "profile.category": newName } }, { session }),
+  ]);
 }
