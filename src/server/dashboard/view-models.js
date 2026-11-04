@@ -27,7 +27,7 @@ function safeTz(tz) {
   }
 }
 
-function ymd(date, tz) {
+export function ymd(date, tz) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
     year: "numeric",
@@ -58,6 +58,22 @@ export function formatWhen(value, tz = DEFAULT_TZ) {
     .toUpperCase();
 
   return { date, time };
+}
+
+/** "Wed, 18 Nov" (never "Today"), in the given timezone. */
+export function formatDayLabel(value, tz = DEFAULT_TZ) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-IN", { timeZone: safeTz(tz || DEFAULT_TZ), weekday: "short", day: "numeric", month: "short" }).format(d);
+}
+
+/** "6:00 PM" in the given timezone. */
+export function formatTimeOnly(value, tz = DEFAULT_TZ) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-IN", { timeZone: safeTz(tz || DEFAULT_TZ), hour: "numeric", minute: "2-digit", hour12: true })
+    .format(d)
+    .toUpperCase();
 }
 
 export function formatDate(value, tz = DEFAULT_TZ) {

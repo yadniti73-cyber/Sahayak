@@ -19,7 +19,7 @@ export const dashboardNavigation = {
   mentor: [
     { label: "Dashboard", href: APP_ROUTES.mentorDashboard },
     { label: "Bookings", href: APP_ROUTES.mentorBookings },
-    { label: "Calendar", href: APP_ROUTES.mentorCalendar },
+    { label: "Schedule", href: APP_ROUTES.mentorCalendar },
     { label: "Availability", href: APP_ROUTES.mentorAvailability },
     { label: "Profile", href: APP_ROUTES.mentorProfile },
     { label: "Analytics", href: APP_ROUTES.mentorAnalytics },

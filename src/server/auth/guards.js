@@ -35,6 +35,7 @@ export async function getCurrentUser() {
     role: user.role,
     firstName: user.firstName,
     lastName: user.lastName,
+    pictureUrl: user.pictureUrl || "",
   };
 }
 

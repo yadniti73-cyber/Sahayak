@@ -7,13 +7,12 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  CalendarCheck,
   CalendarDays,
   Heart,
   Home,
-  LifeBuoy,
   LogOut,
   Menu,
-  Search,
   Settings,
   ShieldCheck,
   User,
@@ -21,6 +20,9 @@ import {
   X,
 } from "lucide-react";
 import { dashboardNavigation } from "@/lib/navigation";
+import { APP_ROUTES } from "@/lib/routes";
+import { Avatar } from "../app-primitives";
+import { getInitials, useAuth } from "../providers/AuthContext";
 
 const iconMap = {
   Dashboard: Home,
@@ -29,7 +31,7 @@ const iconMap = {
   Favorites: Heart,
   Profile: User,
   Settings,
-  Calendar: BookOpen,
+  Schedule: CalendarCheck,
   Availability: CalendarDays,
   Analytics: BarChart3,
   Users,
@@ -44,7 +46,47 @@ const roleTone = {
   admin: "bg-slate-900 text-white border-slate-900",
 };
 
-function SidebarContent({ role, navItems, activeHref, onNavigate }) {
+const profileRoute = {
+  seeker: APP_ROUTES.dashboardProfile,
+  mentor: APP_ROUTES.mentorProfile,
+  admin: APP_ROUTES.adminSettings, // admins have no profile page; settings is the closest thing
+};
+
+function SidebarUser({ role, user, loading, onNavigate, onLogout }) {
+  const fullName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email : "";
+
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-app-border bg-white p-2">
+      <Link
+        href={profileRoute[role] || APP_ROUTES.dashboardProfile}
+        onClick={onNavigate}
+        aria-label="Open profile"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1.5 transition hover:bg-blue-50"
+      >
+        {loading || !user ? (
+          <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-slate-100" aria-hidden="true" />
+        ) : (
+          <Avatar initials={getInitials(user.firstName, user.lastName)} src={user.pictureUrl} alt={fullName} size="sm" />
+        )}
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-app-text">{user ? fullName : "Profile"}</span>
+          <span className="block truncate text-xs text-app-muted">{user ? user.email : "View profile"}</span>
+        </span>
+      </Link>
+      <button
+        type="button"
+        onClick={onLogout}
+        aria-label="Log out"
+        title="Log out"
+        className="shrink-0 rounded-lg p-2 text-app-muted transition hover:bg-red-50 hover:text-red-600"
+      >
+        <LogOut size={18} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function SidebarContent({ role, navItems, activeHref, onNavigate, user, authLoading, onLogout }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center justify-between border-b border-app-border px-5">
@@ -85,20 +127,9 @@ function SidebarContent({ role, navItems, activeHref, onNavigate }) {
         })}
       </nav>
 
-      <div className="p-4">
-        <div className="rounded-xl bg-gradient-to-br from-app-primary to-green-600 p-4 text-white shadow-soft">
-          <LifeBuoy size={20} aria-hidden="true" />
-          <p className="mt-2 text-sm font-semibold">Need help?</p>
-          <p className="mt-1 text-xs leading-5 text-white/85">A real person from our team replies within 24 hours.</p>
-          <Link
-            href="/contact"
-            onClick={onNavigate}
-            className="mt-3 inline-flex rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-app-primary transition hover:bg-green-50"
-          >
-            Contact us
-          </Link>
-        </div>
-        <Link href="/" onClick={onNavigate} className="mt-3 block text-center text-xs font-semibold text-app-muted transition hover:text-app-primary">
+      <div className="grid gap-3 p-4">
+        <SidebarUser role={role} user={user} loading={authLoading} onNavigate={onNavigate} onLogout={onLogout} />
+        <Link href="/" onClick={onNavigate} className="block text-center text-xs font-semibold text-app-muted transition hover:text-app-primary">
           Back to website
         </Link>
       </div>
@@ -110,6 +141,7 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
   const navItems = dashboardNavigation[role] || dashboardNavigation.seeker;
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading: authLoading, clearUser } = useAuth();
   const [drawer, setDrawer] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -141,8 +173,9 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
 
   async function logout() {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
     } finally {
+      clearUser();
       router.push("/login");
       router.refresh();
     }
@@ -152,7 +185,7 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
     <div className={`min-h-screen bg-gradient-to-br from-white via-blue-50/50 to-green-50/40 text-app-text ${className}`}>
       <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
         <aside className="sticky top-0 hidden h-screen border-r border-app-border bg-white/90 backdrop-blur lg:block">
-          <SidebarContent role={role} navItems={navItems} activeHref={activeHref} />
+          <SidebarContent role={role} navItems={navItems} activeHref={activeHref} user={user} authLoading={authLoading} onLogout={logout} />
         </aside>
 
         {/* Mobile drawer */}
@@ -176,7 +209,7 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
             >
               <X size={18} aria-hidden="true" />
             </button>
-            <SidebarContent role={role} navItems={navItems} activeHref={activeHref} onNavigate={() => setDrawer(false)} />
+            <SidebarContent role={role} navItems={navItems} activeHref={activeHref} onNavigate={() => setDrawer(false)} user={user} authLoading={authLoading} onLogout={logout} />
           </aside>
         </div>
 
@@ -200,25 +233,13 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
                 <p className="text-xs font-semibold uppercase tracking-wide text-green-700">{role} workspace</p>
                 <h1 className="truncate text-lg font-bold text-app-text">{title}</h1>
               </div>
-              <form className="ml-auto hidden w-full max-w-sm items-center rounded-full border border-transparent bg-slate-100/80 px-4 py-2 text-sm text-app-muted transition focus-within:border-green-400 focus-within:bg-white md:flex">
-                <Search size={17} aria-hidden="true" />
-                <input aria-label="Search workspace" className="w-full bg-transparent px-3 outline-none" placeholder="Search" />
-              </form>
               <button
                 type="button"
-                className="relative ml-auto rounded-lg border border-app-border bg-white p-2 text-app-muted transition hover:border-green-300 hover:text-green-700 md:ml-0"
+                className="relative ml-auto rounded-lg border border-app-border bg-white p-2 text-app-muted transition hover:border-green-300 hover:text-green-700"
                 aria-label="Notifications"
               >
                 <Bell size={19} aria-hidden="true" />
                 <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-green-500 ring-2 ring-white" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={logout}
-                className="rounded-lg border border-app-border bg-white p-2 text-app-muted transition hover:border-red-200 hover:text-red-600"
-                aria-label="Log out"
-              >
-                <LogOut size={19} aria-hidden="true" />
               </button>
             </div>
           </header>

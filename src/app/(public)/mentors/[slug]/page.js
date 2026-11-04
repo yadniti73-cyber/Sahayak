@@ -6,6 +6,7 @@ import { modeLabel } from "@/components/domain-cards";
 import { Section } from "@/components/PageHero";
 import { HeroIconBackdrop } from "@/components/HeroIconBackdrop";
 import { Reveal } from "@/components/Reveal";
+import { RequestGuidanceForm } from "@/components/RequestGuidanceForm";
 import { getMentorBySlug, getMentors } from "@/features/catalog/server/service";
 
 export const revalidate = 60;
@@ -61,13 +62,14 @@ export default async function MentorProfilePage({ params }) {
             <Panel className="shadow-soft lg:sticky lg:top-24">
               <h2 className="text-lg font-bold">Request guidance</h2>
               <p className="mt-2 text-sm text-app-muted">Choose a session mode, date, and time. Booking confirmation happens after mentor review.</p>
-              <div className="mt-5 grid gap-3">
-                <button type="button" className="app-input text-left">{modeLabel[mentor.mode] || "Video"} session - {mentor.price}</button>
-                <button type="button" className="app-input text-left">{mentor.availability} - 6:00 PM</button>
-                <textarea className="app-input min-h-24 resize-none" placeholder="Add a short note for the mentor" />
-                <ButtonLink href="/login" variant="green">Request guidance</ButtonLink>
-                <p className="text-center text-xs text-app-muted">You will be asked to sign in first.</p>
-              </div>
+              {mentor.availability ? <p className="mt-3 text-sm font-semibold text-app-text">Usually available: {mentor.availability}</p> : null}
+              <p className="text-sm text-app-muted">{modeLabel[mentor.mode] || "Video"} session{mentor.price ? ` - ${mentor.price}` : ""}</p>
+              <RequestGuidanceForm
+                mentorId={String(mentor._id)}
+                mentorSlug={mentor.slug}
+                defaultMode={mentor.mode}
+                price={mentor.price}
+              />
             </Panel>
           </Reveal>
 

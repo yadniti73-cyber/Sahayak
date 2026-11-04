@@ -4,6 +4,11 @@ export function GoogleAuthButton({ label = "Continue with Google", className = "
   return (
     <a
       href="/api/auth/google"
+      onClick={(event) => {
+        // Preserve ?next=/some/page so Google sign-in also returns the user where they came from.
+        const next = new URLSearchParams(window.location.search).get("next");
+        if (next) event.currentTarget.href = `/api/auth/google?next=${encodeURIComponent(next)}`;
+      }}
       className={`inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-app-border bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:shadow-soft ${className}`}
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">

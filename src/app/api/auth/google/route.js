@@ -2,19 +2,14 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { loginWithGoogleIdToken } from "@/features/auth/server/service";
 import { setAuthCookie } from "@/server/auth/cookies";
-import { appConfig, PRODUCTION_REDIRECT_URIS } from "@/server/config";
-
-function resolveRedirectUri(request) {
-  if (appConfig.google.redirectUri) return appConfig.google.redirectUri;
-  const origin = new URL(request.url).origin;
-  const match = PRODUCTION_REDIRECT_URIS.find((uri) => uri.startsWith(origin));
-  return match || new URL("/api/auth/google/callback", request.url).toString();
-}
+import { appConfig } from "@/server/config";
+import { resolveGoogleRedirectUri } from "@/server/auth/google";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 // GET /api/auth/google — redirects the browser to Google's consent screen.
 export async function GET(request) {
   const clientId = appConfig.google.clientId;
-  const redirectUri = resolveRedirectUri(request);
+  const redirectUri = resolveGoogleRedirectUri(request);
 
   if (!clientId) {
     return NextResponse.json(
@@ -51,6 +46,19 @@ export async function GET(request) {
     path: "/",
     maxAge: 60 * 10,
   });
+
+  const next = safeNextPath(new URL(request.url).searchParams.get("next"));
+  if (next) {
+    response.cookies.set({
+      name: "GuideShala_post_login",
+      value: next,
+      httpOnly: true,
+      secure: appConfig.cookieSecure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 10,
+    });
+  }
 
   return response;
 }

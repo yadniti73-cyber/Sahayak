@@ -1,4 +1,5 @@
 import { DashboardShell, Panel, SectionHeading } from "@/components";
+import { AccountProfile } from "@/components/AccountProfile";
 
 export default function AdminSettingsPage() {
   return (
@@ -9,6 +10,10 @@ export default function AdminSettingsPage() {
           title="Control operational defaults"
           description="Configure response deadlines, verification queues, reminder timing, and platform moderation defaults."
         />
+        <div className="grid gap-3">
+          <h2 className="text-lg font-bold">Your profile</h2>
+          <AccountProfile roleLabel="Admin" />
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           {["Booking response deadline", "Verification review SLA", "Reminder window", "Public search visibility"].map((item) => (
             <Panel key={item}>

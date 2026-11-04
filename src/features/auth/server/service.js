@@ -110,11 +110,11 @@ export async function logoutUser(sessionId) {
 }
 
 // --- Replaces the old ID-token-based loginWithGoogle ---
-export async function loginWithGoogleCode(code, { userAgent = "unknown", ipAddress = "" } = {}) {
+export async function loginWithGoogleCode(code, { userAgent = "unknown", ipAddress = "", redirectUri } = {}) {
   const parsed = z.string().min(1).parse(code);
   await connectMongo();
 
-  const googlePayload = await exchangeCodeForGoogleProfile(parsed);
+  const googlePayload = await exchangeCodeForGoogleProfile(parsed, redirectUri);
   const email = googlePayload.email.toLowerCase();
   let user = await findUserByEmail(email);
 
@@ -133,6 +133,9 @@ export async function loginWithGoogleCode(code, { userAgent = "unknown", ipAddre
       lastName,
       role: "SEEKER",
     });
+  } else if (!user.pictureUrl && googlePayload.picture) {
+    // Existing account signing in with Google for the first time: keep their Google photo for the avatar.
+    user = (await updateUser(user._id.toString(), { pictureUrl: googlePayload.picture })) || user;
   }
 
   if (user.status !== "ACTIVE") {
@@ -213,7 +216,14 @@ export async function loginWithGoogleIdToken(idToken, { userAgent = "unknown", i
 }
 
 // Exchanges the authorization code for tokens, then verifies + returns the ID token payload.
-async function exchangeCodeForGoogleProfile(code) {
+function googleError(message, reason) {
+  return Object.assign(new Error(message), { googleReason: reason });
+}
+
+async function exchangeCodeForGoogleProfile(code, redirectUri) {
+  if (!appConfig.google.clientId || !appConfig.google.clientSecret) {
+    throw googleError("GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set.", "missing_credentials");
+  }
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -221,13 +231,19 @@ async function exchangeCodeForGoogleProfile(code) {
       code,
       client_id: appConfig.google.clientId,
       client_secret: appConfig.google.clientSecret,
-      redirect_uri: appConfig.google.redirectUri,
+      redirect_uri: redirectUri || appConfig.google.redirectUri,
       grant_type: "authorization_code",
     }),
   });
 
   if (!tokenResponse.ok) {
-    throw new Error("Unable to exchange Google authorization code.");
+    const detail = await tokenResponse.text().catch(() => "");
+    let reason = "token_exchange_failed";
+    try {
+      const code = JSON.parse(detail)?.error;
+      if (["redirect_uri_mismatch", "invalid_client", "invalid_grant", "unauthorized_client"].includes(code)) reason = code;
+    } catch {}
+    throw googleError(`Unable to exchange Google authorization code (redirect_uri=${redirectUri}) (${tokenResponse.status}): ${detail}`, reason);
   }
 
   const tokenData = await tokenResponse.json();

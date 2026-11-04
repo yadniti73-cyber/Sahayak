@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { LogOut } from "lucide-react";
@@ -14,7 +14,6 @@ export function SignOutButton({ className = "", children = "Sign out", iconOnly 
     } finally {
       window.location.assign("/login");
     }
-  }
   }
 
   return (

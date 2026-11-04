@@ -1,41 +1,31 @@
-import { DashboardShell, Badge, EmptyState, Panel, SectionHeading } from "@/components";
-import { statusInfo } from "@/components/domain-cards";
+import { DashboardShell, SectionHeading } from "@/components";
+import { MentorCalendar } from "@/components/MentorCalendar";
 import { requirePageAccess } from "@/server/auth/route-guards";
-import { getMentorUpcomingBookings } from "@/server/dashboard/queries";
+import { getMentorBookingItems, getTodayKey } from "@/server/dashboard/queries";
 
-export default async function MentorCalendarPage() {
+export const dynamic = "force-dynamic";
+
+const YEAR = 365 * 24 * 60 * 60 * 1000;
+
+export default async function MentorSchedulePage() {
   const user = await requirePageAccess(["MENTOR"]);
-  const sessions = await getMentorUpcomingBookings(user.id);
+  const now = Date.now();
+  const items = await getMentorBookingItems(user.id, {
+    statuses: ["REQUESTED", "RESCHEDULE_REQUESTED", "CONFIRMED", "COMPLETED"],
+    from: new Date(now - YEAR),
+    to: new Date(now + YEAR),
+    limit: 500,
+  });
 
   return (
-    <DashboardShell role="mentor" title="Calendar">
+    <DashboardShell role="mentor" title="Schedule">
       <div className="grid gap-6">
         <SectionHeading
-          eyebrow="Calendar"
-          title="Your upcoming sessions"
-          description="Confirmed sessions and pending requests, soonest first."
+          eyebrow="Schedule"
+          title="Your sessions at a glance"
+          description="Grey days are free. Yellow days have requests waiting for you, green days have completed sessions, and today is highlighted in red."
         />
-        {sessions.length === 0 ? (
-          <EmptyState title="Nothing scheduled" description="Confirmed sessions and pending requests will show up here." />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {sessions.map((s) => {
-              const [label, tone] = statusInfo(s.status);
-              return (
-                <Panel key={s.id}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-app-primary">{s.date} at {s.time}</p>
-                      <h2 className="mt-2 font-bold">{s.topic}</h2>
-                      <p className="mt-1 text-sm text-app-muted">{s.mentor}</p>
-                    </div>
-                    <Badge tone={tone}>{label}</Badge>
-                  </div>
-                </Panel>
-              );
-            })}
-          </div>
-        )}
+        <MentorCalendar items={items} todayKey={getTodayKey()} />
       </div>
     </DashboardShell>
   );

@@ -87,7 +87,7 @@ export function StatCard({ label, value, detail, icon: Icon }) {
   );
 }
 
-export function Avatar({ initials, size = "md" }) {
+export function Avatar({ initials, src, alt = "", size = "md" }) {
   const sizes = {
     sm: "h-10 w-10 text-sm",
     md: "h-14 w-14 text-base",
@@ -95,8 +95,13 @@ export function Avatar({ initials, size = "md" }) {
   };
 
   return (
-    <div className={`${sizes[size]} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-green-100 font-bold text-app-primary ring-1 ring-blue-100`}>
-      {initials}
+    <div className={`${sizes[size]} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-100 to-green-100 font-bold text-app-primary ring-1 ring-blue-100`}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={alt} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+      ) : (
+        initials
+      )}
     </div>
   );
 }

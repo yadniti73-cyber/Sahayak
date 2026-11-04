@@ -4,7 +4,8 @@ export const PRODUCTION_REDIRECT_URIS = [
   "https://guideshala.in/api/auth/google/callback",
   "https://sahayak-india.onrender.com/api/auth/google/callback",
 ];
-const googleRedirectUri = isDev ? "http://localhost:3000/api/auth/google/callback" : "";
+// Optional override. When empty the redirect URI is derived from the request (see server/auth/google.js).
+const googleRedirectUri = process.env.GOOGLE_REDIRECT_URI || "";
 const cookieSecure = !isDev;
 const isProductionBuild = process.env.NODE_ENV === "production" || cookieSecure;
 const DEFAULT_JWT_SECRET = "change-this-secret";

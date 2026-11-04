@@ -14,6 +14,9 @@ import { User } from "@/server/models/user";
 import {
   DEFAULT_TZ,
   formatDate,
+  formatDayLabel,
+  formatTimeOnly,
+  ymd,
   formatNumber,
   fullName,
   mentorProfileStrength,
@@ -201,6 +204,49 @@ export async function getMentorUpcomingBookings(userId, { limit = 30 } = {}) {
     .limit(limit)
     .lean();
   return toBookingViews(bookings, "mentor");
+}
+
+/**
+ * Plain, serialisable bookings for the mentor's Requests list and Schedule calendar.
+ * All labels are rendered here in one timezone so server and browser output always agree.
+ */
+export async function getMentorBookingItems(userId, { statuses, from, to, limit = 300, sort = 1 } = {}) {
+  await connectMongo();
+  const match = { mentorId: userId };
+  if (statuses) match.status = { $in: statuses };
+  if (from || to) match.startAtUtc = { ...(from ? { $gte: from } : {}), ...(to ? { $lt: to } : {}) };
+
+  const bookings = await Booking.find(match).sort({ startAtUtc: sort }).limit(limit).lean();
+  const seekerIds = [...new Set(bookings.map((b) => String(b.seekerId)))];
+  const seekers = seekerIds.length
+    ? await User.find({ _id: { $in: seekerIds } }, { firstName: 1, lastName: 1, email: 1 }).lean()
+    : [];
+  const names = new Map(seekers.map((u) => [String(u._id), fullName(u) || u.email]));
+  const now = Date.now();
+
+  return bookings.map((b) => {
+    const tz = b.mentorTimezone || DEFAULT_TZ;
+    return {
+      id: String(b._id),
+      status: b.status,
+      seeker: names.get(String(b.seekerId)) || "Seeker",
+      notes: b.notes?.trim() || "",
+      mode: b.mode,
+      price: b.price || "",
+      startIso: new Date(b.startAtUtc).toISOString(),
+      endIso: new Date(b.endAtUtc).toISOString(),
+      dayKey: ymd(new Date(b.startAtUtc), tz),
+      dateLabel: formatDayLabel(b.startAtUtc, tz),
+      timeLabel: formatTimeOnly(b.startAtUtc, tz),
+      endTimeLabel: formatTimeOnly(b.endAtUtc, tz),
+      isPast: new Date(b.startAtUtc).getTime() < now,
+    };
+  });
+}
+
+/** Today's date key (YYYY-MM-DD) in the app timezone, for highlighting "today" in the calendar. */
+export function getTodayKey() {
+  return ymd(new Date(), DEFAULT_TZ);
 }
 
 /* ------------------------------------------------------------------- admin */

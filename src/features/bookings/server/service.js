@@ -4,6 +4,8 @@ import { findMentorById } from "@/server/repositories/mentorProfiles";
 import { findUserById } from "@/server/repositories/users";
 import { createBooking, findBookingById, findBookingsForUser, updateBooking } from "@/server/repositories/bookings";
 import { createBookingEvent } from "@/server/repositories/bookingEvents";
+import { createNotification } from "@/server/repositories/notifications";
+import { DEFAULT_TZ, formatDayLabel, formatTimeOnly, fullName } from "@/server/dashboard/view-models";
 
 const createBookingSchema = z.object({
   mentorProfileId: z.string().min(1),
@@ -21,10 +23,25 @@ const createBookingSchema = z.object({
 });
 
 const updateBookingSchema = z.object({
-  action: z.enum(["CONFIRM", "REJECT", "CANCEL", "COMPLETE", "RESCHEDULE_REQUEST", "NO_SHOW"]),
+  action: z.enum(["CONFIRM", "REJECT", "CANCEL", "COMPLETE", "RESCHEDULE_REQUEST", "SCHEDULE_LATER", "NO_SHOW"]),
   startAtUtc: z.string().optional(),
   endAtUtc: z.string().optional(),
+  // Optional note from the mentor, included in the notification sent to the seeker.
+  message: z.string().max(500).optional(),
 });
+
+// Notifications are best-effort: a failure here must never undo the booking change itself.
+async function notify(userId, payload) {
+  try {
+    await createNotification({ userId, ...payload });
+  } catch (error) {
+    console.error("booking notification failed", error);
+  }
+}
+
+function whenLabel(booking, tz) {
+  return `${formatDayLabel(booking.startAtUtc, tz)} at ${formatTimeOnly(booking.startAtUtc, tz)}`;
+}
 
 export async function createBookingRequest(seekerId, payload) {
   const parsed = createBookingSchema.parse(payload);
@@ -60,6 +77,13 @@ export async function createBookingRequest(seekerId, payload) {
   });
 
   await createBookingEvent({ bookingId: booking._id, type: "REQUESTED", actorId: seekerId, data: { notes: booking.notes } });
+
+  const seeker = await findUserById(seekerId);
+  await notify(mentor._id, {
+    title: "New guidance request",
+    message: `${fullName(seeker) || "A seeker"} requested a session on ${whenLabel(booking, booking.mentorTimezone || DEFAULT_TZ)}.`,
+    link: "/mentor/bookings",
+  });
   return booking;
 }
 
@@ -106,14 +130,14 @@ export async function updateBookingWorkflow(bookingId, userId, role, payload) {
 
   switch (action) {
     case "CONFIRM":
-      if (!isMentor || booking.status !== "REQUESTED") {
+      if (!isMentor || !["REQUESTED", "RESCHEDULE_REQUESTED"].includes(booking.status)) {
         throw new Error("Only mentors can confirm a requested booking.");
       }
       updates.status = "CONFIRMED";
       eventType = "CONFIRMED";
       break;
     case "REJECT":
-      if (!isMentor || booking.status !== "REQUESTED") {
+      if (!isMentor || !["REQUESTED", "RESCHEDULE_REQUESTED"].includes(booking.status)) {
         throw new Error("Only mentors can reject a requested booking.");
       }
       updates.status = "REJECTED";
@@ -153,6 +177,24 @@ export async function updateBookingWorkflow(bookingId, userId, role, payload) {
       updates.endAtUtc = endAt;
       eventType = "RESCHEDULE_REQUESTED";
       break;
+    case "SCHEDULE_LATER": {
+      // Mentor can't confirm right now: keep the request open, optionally proposing a different time.
+      if (!isMentor || !["REQUESTED", "RESCHEDULE_REQUESTED"].includes(booking.status)) {
+        throw new Error("Only mentors can reschedule a pending request.");
+      }
+      updates.status = "RESCHEDULE_REQUESTED";
+      if (parsed.startAtUtc) {
+        const newStart = new Date(parsed.startAtUtc);
+        if (Number.isNaN(newStart.getTime()) || newStart <= new Date()) {
+          throw new Error("Please pick a time in the future.");
+        }
+        const duration = new Date(booking.endAtUtc).getTime() - new Date(booking.startAtUtc).getTime();
+        updates.startAtUtc = newStart;
+        updates.endAtUtc = new Date(newStart.getTime() + (duration > 0 ? duration : 60 * 60 * 1000));
+      }
+      eventType = "RESCHEDULE_REQUESTED";
+      break;
+    }
     case "NO_SHOW":
       if (!isMentor || booking.status !== "CONFIRMED") {
         throw new Error("Only mentors can mark a confirmed booking as no-show.");
@@ -164,7 +206,58 @@ export async function updateBookingWorkflow(bookingId, userId, role, payload) {
       throw new Error("Invalid booking action.");
   }
 
-  const updatedBooking = await updateBooking(bookingId, updates);
-  await createBookingEvent({ bookingId: updatedBooking._id, actorId: userId, type: eventType, data: { action } });
+  let updatedBooking;
+  try {
+    updatedBooking = await updateBooking(bookingId, updates);
+  } catch (error) {
+    // Unique index: one CONFIRMED booking per mentor per start time.
+    if (error?.code === 11000) throw new Error("You already have a confirmed session at this time.");
+    throw error;
+  }
+  await createBookingEvent({
+    bookingId: updatedBooking._id,
+    actorId: userId,
+    type: eventType,
+    data: { action, message: parsed.message || "" },
+  });
+
+  await notifyAboutBookingChange({ before: booking, after: updatedBooking, action, isMentor, message: parsed.message });
   return updatedBooking;
+}
+
+
+// Tells the other party what happened. Mentors' decisions go to the seeker; seekers' changes go to the mentor.
+async function notifyAboutBookingChange({ before, after, action, isMentor, message }) {
+  const [mentor, seeker] = await Promise.all([findUserById(after.mentorId), findUserById(after.seekerId)]);
+  const mentorName = fullName(mentor) || "Your mentor";
+  const seekerName = fullName(seeker) || "The seeker";
+  const seekerTz = after.seekerTimezoneAtBooking || DEFAULT_TZ;
+  const note = message?.trim() ? ` "${message.trim()}"` : "";
+  const toSeeker = (title, text) => notify(after.seekerId, { title, message: text, link: "/dashboard/bookings" });
+  const toMentor = (title, text) => notify(after.mentorId, { title, message: text, link: "/mentor/bookings" });
+
+  switch (action) {
+    case "CONFIRM":
+      return toSeeker("Session confirmed", `${mentorName} approved your request for ${whenLabel(after, seekerTz)}.${note}`);
+    case "REJECT":
+      return toSeeker("Request declined", `${mentorName} couldn't take your request for ${whenLabel(before, seekerTz)}.${note}`);
+    case "SCHEDULE_LATER": {
+      const moved = new Date(before.startAtUtc).getTime() !== new Date(after.startAtUtc).getTime();
+      return moved
+        ? toSeeker("New time suggested", `${mentorName} suggested ${whenLabel(after, seekerTz)} instead of ${whenLabel(before, seekerTz)}.${note}`)
+        : toSeeker("Mentor will schedule later", `${mentorName} can't confirm ${whenLabel(before, seekerTz)} yet and will get back to you with a time.${note}`);
+    }
+    case "COMPLETE":
+      return toSeeker("Session completed", `Your session with ${mentorName} on ${whenLabel(after, seekerTz)} is marked completed.`);
+    case "NO_SHOW":
+      return toSeeker("Session marked as no-show", `${mentorName} marked your session on ${whenLabel(after, seekerTz)} as a no-show.`);
+    case "CANCEL":
+      return isMentor
+        ? toSeeker("Session cancelled", `${mentorName} cancelled your session on ${whenLabel(after, seekerTz)}.${note}`)
+        : toMentor("Session cancelled", `${seekerName} cancelled the session on ${whenLabel(after, after.mentorTimezone || DEFAULT_TZ)}.`);
+    case "RESCHEDULE_REQUEST":
+      return toMentor("Reschedule requested", `${seekerName} asked to move the session to ${whenLabel(after, after.mentorTimezone || DEFAULT_TZ)}.`);
+    default:
+      return null;
+  }
 }

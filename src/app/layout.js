@@ -1,4 +1,5 @@
 import "./globals.css";
+import { AppProviders } from "@/components/providers";
 
 export const metadata = {
   title: "GuideShala | Find trusted guidance",
@@ -9,7 +10,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

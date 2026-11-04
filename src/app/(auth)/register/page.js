@@ -7,6 +7,9 @@ import { GraduationCap, Search } from "lucide-react";
 import { PublicShell, CheckItem, Panel } from "@/components";
 import { PageHero } from "@/components/PageHero";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { useAuth } from "@/components/providers";
+import { ROLE_HOME_ROUTES } from "@/lib/routes";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { FormAlert, OrDivider, PasswordField, SubmitButton, isStrongPassword } from "@/components/auth-fields";
 
 const roles = [
@@ -16,6 +19,7 @@ const roles = [
 
 function RegisterForm() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const searchParams = useSearchParams();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -50,7 +54,8 @@ function RegisterForm() {
         return;
       }
 
-      router.push("/dashboard/home");
+      await refreshUser();
+      router.push(safeNextPath(searchParams.get("next")) || ROLE_HOME_ROUTES[result.data?.user?.role] || "/dashboard/home");
       router.refresh();
     } catch (err) {
       setError("Unable to create account. Please try again.");

@@ -25,6 +25,11 @@ const UserSchema = new mongoose.Schema(
       enum: ["ACTIVE", "INACTIVE", "LOCKED"],
       default: "ACTIVE",
     },
+    // Profile details edited from the dashboard profile pages.
+    city: { type: String, trim: true, default: "" },
+    phone: { type: String, trim: true, default: "" },
+    preferredLanguage: { type: String, trim: true, default: "" },
+    bio: { type: String, trim: true, default: "" },
     profileCompleted: { type: Boolean, default: false },
     createdAt: { type: Date, default: () => new Date() },
     updatedAt: { type: Date, default: () => new Date() },

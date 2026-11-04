@@ -1,5 +1,5 @@
 import { DashboardShell, ProgressBar, SectionHeading } from "@/components";
-import { MentorApplicationForm } from "@/components/mentor-verification/MentorApplicationForm";
+import { MentorProfileSection } from "@/components/mentor-verification/MentorProfileSection";
 import { getCategories } from "@/features/catalog/server/service";
 import { getMentorApplication } from "@/features/mentor-verification/server/service";
 import { requirePageAccess } from "@/server/auth/route-guards";
@@ -30,7 +30,7 @@ export default async function MentorProfileEditPage() {
           </div>
           <div className="mt-2"><ProgressBar value={strength.percent} /></div>
         </div>
-        <MentorApplicationForm initial={application} categories={categories.map((c) => c.name)} />
+        <MentorProfileSection initial={application} categories={categories.map((c) => c.name)} />
       </div>
     </DashboardShell>
   );
