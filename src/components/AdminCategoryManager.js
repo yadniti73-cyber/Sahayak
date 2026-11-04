@@ -119,10 +119,10 @@ export function AdminCategoryManager({ categories = [] }) {
                       </summary>
                       <div className="absolute right-0 top-10 z-20 min-w-40 overflow-hidden rounded-xl border border-app-border bg-white p-1.5 shadow-lg">
                         <button type="button" disabled={busy} onClick={(event) => startEdit(category, event.currentTarget.closest("details"))} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-app-text transition hover:bg-slate-50 disabled:opacity-50">
-                          <Pencil size={15} /> Edit category
+                          <Pencil size={15} />
                         </button>
                         <button type="button" disabled={busy} onClick={(event) => deleteCategory(category, event.currentTarget.closest("details"))} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50">
-                          <Trash2 size={15} /> Delete category
+                          <Trash2 size={15} /> 
                         </button>
                       </div>
                     </details>
