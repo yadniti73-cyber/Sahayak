@@ -71,3 +71,53 @@ body {
   .reveal { opacity: 1; transform: none; transition: none; }
   .word-swap, .animate-float-slow, .animate-pop-in, .skeleton { animation: none; }
 }
+
+
+/* ---------- Admin workspace interaction and theme consistency ---------- */
+.admin-workspace {
+  color: var(--app-text, #172033);
+}
+.admin-workspace main {
+  background: linear-gradient(135deg, rgba(255,255,255,.42), rgba(239,246,255,.34) 55%, rgba(240,253,244,.3));
+  min-height: calc(100vh - 4rem);
+}
+.admin-workspace :is(.app-card, [data-admin-card], .rounded-xl.border, .rounded-2xl.border) {
+  border-color: var(--app-border, #dbe4ef);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease;
+}
+.admin-workspace :is(.app-card, [data-admin-card]):hover {
+  border-color: rgba(22, 163, 74, .42);
+  box-shadow: 0 12px 30px rgba(30, 64, 175, .08);
+}
+.admin-workspace :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(37, 99, 235, .28);
+  outline-offset: 3px;
+}
+.admin-workspace :is(button, a) {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+}
+.admin-workspace table tbody tr {
+  transition: background-color 160ms ease;
+}
+.admin-workspace table tbody tr:hover {
+  background: rgba(239, 246, 255, .72);
+}
+.admin-workspace input:not([type="checkbox"]),
+.admin-workspace select,
+.admin-workspace textarea {
+  border-color: var(--app-border, #dbe4ef);
+}
+.admin-workspace input:focus,
+.admin-workspace select:focus,
+.admin-workspace textarea:focus {
+  border-color: var(--app-primary, #2563eb);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-workspace *, .admin-workspace *::before, .admin-workspace *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

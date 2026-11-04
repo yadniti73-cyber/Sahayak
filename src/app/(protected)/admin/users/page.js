@@ -1,7 +1,9 @@
 import { DashboardShell, SectionHeading } from "@/components";
-import { SimpleTable } from "@/components/domain-cards";
+import { AdminUsersTable } from "@/features/admin";
 import { requirePageAccess } from "@/server/auth/route-guards";
 import { getAdminUsers } from "@/server/dashboard/queries";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
   await requirePageAccess(["ADMIN"]);
@@ -15,7 +17,7 @@ export default async function AdminUsersPage() {
           title="Manage account health and access"
           description={`Showing ${rows.length} of ${total} registered users, newest first.`}
         />
-        <SimpleTable headers={["User", "Email", "Role", "Status", "Joined"]} rows={rows} emptyMessage="No users yet." />
+        <AdminUsersTable initialRows={rows} />
       </div>
     </DashboardShell>
   );

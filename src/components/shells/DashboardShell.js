@@ -13,6 +13,7 @@ import {
   Home,
   LogOut,
   Menu,
+  MessageSquareText,
   Settings,
   ShieldCheck,
   User,
@@ -38,6 +39,7 @@ const iconMap = {
   Mentors: ShieldCheck,
   Categories: BookOpen,
   Reports: BarChart3,
+  Feedback: MessageSquareText,
 };
 
 const roleTone = {
@@ -111,7 +113,7 @@ function SidebarContent({ role, navItems, activeHref, onNavigate, user, authLoad
               className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition duration-200 ${
                 active
                   ? "bg-gradient-to-r from-blue-50 to-green-50 text-app-primary shadow-sm ring-1 ring-blue-100"
-                  : "text-app-muted hover:translate-x-0.5 hover:bg-blue-50 hover:text-app-primary"
+                  : "text-app-muted hover:translate-x-0.5 hover:bg-blue-50 hover:text-app-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-app-primary"
               }`}
             >
               <span
@@ -182,7 +184,7 @@ export function DashboardShell({ children, role = "seeker", title = "Dashboard",
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-white via-blue-50/50 to-green-50/40 text-app-text ${className}`}>
+    <div className={`min-h-screen bg-gradient-to-br from-white via-blue-50/50 to-green-50/40 text-app-text ${role === "admin" ? "admin-workspace" : ""} ${className}`}>
       <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
         <aside className="sticky top-0 hidden h-screen border-r border-app-border bg-white/90 backdrop-blur lg:block">
           <SidebarContent role={role} navItems={navItems} activeHref={activeHref} user={user} authLoading={authLoading} onLogout={logout} />

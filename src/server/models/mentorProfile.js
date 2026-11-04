@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const MentorProfileSchema = new mongoose.Schema(
   {
@@ -16,6 +16,7 @@ const MentorProfileSchema = new mongoose.Schema(
     mode: { type: String, enum: ["VIDEO", "PHONE", "IN_PERSON"], default: "VIDEO" },
     availability: { type: String, default: "" },
     verified: { type: Boolean, default: false },
+    verificationStatus: { type: String, default: "NOT_SUBMITTED" },
     verifiedAt: { type: Date, default: null },
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     yearsOfExperience: { type: Number, default: 0 },
@@ -37,3 +38,4 @@ MentorProfileSchema.index({ category: 1, active: 1 });
 MentorProfileSchema.index({ userId: 1 }, { unique: true });
 
 export const MentorProfile = mongoose.models.MentorProfile || mongoose.model("MentorProfile", MentorProfileSchema);
+

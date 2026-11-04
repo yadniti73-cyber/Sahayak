@@ -32,6 +32,7 @@ export const dashboardNavigation = {
     { label: "Categories", href: APP_ROUTES.adminCategories },
     { label: "Bookings", href: APP_ROUTES.adminBookings },
     { label: "Reports", href: APP_ROUTES.adminReports },
+    { label: "Feedback", href: APP_ROUTES.adminFeedback },
     { label: "Settings", href: APP_ROUTES.adminSettings },
   ],
 };

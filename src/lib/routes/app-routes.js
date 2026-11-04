@@ -29,6 +29,7 @@ export const APP_ROUTES = {
   adminCategories: "/admin/categories",
   adminBookings: "/admin/bookings",
   adminReports: "/admin/reports",
+  adminFeedback: "/admin/feedback",
   adminSettings: "/admin/settings",
 };
 

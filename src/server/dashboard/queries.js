@@ -293,13 +293,14 @@ export async function getAdminUsers({ limit = 100 } = {}) {
   const [total, users] = await Promise.all([User.countDocuments({}), User.find({}).sort({ createdAt: -1 }).limit(limit).lean()]);
   return {
     total,
-    rows: users.map((u) => [
-      fullName(u) || "(no name)",
-      u.email,
-      titleCase(u.role || "SEEKER"),
-      titleCase(u.status || "ACTIVE"),
-      formatDate(u.createdAt),
-    ]),
+    rows: users.map((u) => ({
+      id: String(u._id),
+      name: fullName(u) || "(no name)",
+      email: u.email,
+      role: u.role || "SEEKER",
+      status: u.status || "ACTIVE",
+      joined: formatDate(u.createdAt),
+    })),
   };
 }
 

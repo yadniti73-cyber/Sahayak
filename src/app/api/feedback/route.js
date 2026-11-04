@@ -1,23 +1,33 @@
-// Save as: app/api/feedback/route.js
-// Minimal handler so the form works end-to-end. Replace the TODO with your
-// database insert or email service.
 import { NextResponse } from "next/server";
+import { connectMongo } from "@/server/db/mongo";
+import { createFeedback } from "@/server/repositories/feedback";
 
 export async function POST(request) {
   let body;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Invalid JSON." }, { status: 400 });
   }
 
-  const { name, email, topic, message, rating } = body || {};
-  if (!name || !/^\S+@\S+\.\S+$/.test(email || "") || !message || message.length < 10 || !(rating >= 1 && rating <= 5)) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 422 });
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const topic = typeof body?.topic === "string" ? body.topic.trim().slice(0, 80) : "General";
+  const message = typeof body?.message === "string" ? body.message.trim() : "";
+  const rating = body?.rating === "" || body?.rating == null ? null : Number(body.rating);
+
+  if (!name || name.length > 120 || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 ||
+      message.length < 10 || message.length > 5000 ||
+      (rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 5))) {
+    return NextResponse.json({ success: false, message: "Please check your feedback details." }, { status: 422 });
   }
 
-  // TODO: persist (e.g. Prisma/Mongo/Supabase) or send an email notification.
-  console.log("[feedback]", { name, email, topic, rating, message });
-
-  return NextResponse.json({ ok: true });
+  try {
+    await connectMongo();
+    await createFeedback({ name, email, topic, message, rating });
+    return NextResponse.json({ success: true, message: "Feedback received." }, { status: 201 });
+  } catch (error) {
+    console.error("[feedback] Unable to save submission:", error);
+    return NextResponse.json({ success: false, message: "Unable to save feedback right now." }, { status: 500 });
+  }
 }
