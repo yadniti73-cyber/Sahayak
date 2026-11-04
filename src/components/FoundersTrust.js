@@ -81,21 +81,6 @@ export function FoundersTrust() {
           </p>
         </div>
 
-        {/* Founders */}
-        <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
-          {founders.map((f) => (
-            <div key={f.name}>
-              <div className="app-card flex h-full flex-col items-center border-t-2 border-t-green-500/60 bg-white p-6 text-center transition duration-300 hover:-translate-y-1 hover:shadow-soft">
-                <FounderPhoto founder={f} />
-                <p className="mt-4 text-xs font-bold uppercase tracking-wide text-green-700">{f.title}</p>
-                <p className="mt-1 font-display text-xl font-semibold text-app-text">{f.name}</p>
-                <p className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-app-primary">
-                  <GraduationCap size={15} aria-hidden="true" /> {f.credential}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* Mission and vision */}
         <div className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-2">
