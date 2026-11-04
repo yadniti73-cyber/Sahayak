@@ -4,24 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { GraduationCap, ShieldCheck, Clock, Heart, Search, UserCheck, CalendarCheck, Target, Eye } from "lucide-react";
 
-// Founder details come from the Sahayak deck.
-// To show real photos: put the images in public/images/team/ and set `photo` below.
-const founders = [
-  {
-    name: "Nitish Kumar",
-    initials: "NK",
-    title: "CEO",
-    credential: "Ph.D., IIT Indore",
-    photo: "/images/team/nitish-kumar.jpg",
-  },
-  {
-    name: "Anand Vivek",
-    initials: "AV",
-    title: "CTO",
-    credential: "B.Tech, IIT Indore",
-    photo: "/images/team/anand-vivek.png",
-  },
-];
+
 
 const mission =
   "To build a bridge between need and knowledge: a seamless platform that connects a diverse range of experts with individuals and organizations seeking strategic guidance, and fosters a collaborative environment for growth and problem-solving.";
@@ -42,27 +25,6 @@ const steps = [
   { icon: CalendarCheck, title: "Book and talk", text: "Pick a time, talk by video or in person, leave with a clear next step." },
 ];
 
-function FounderPhoto({ founder }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-blue-100 to-green-100 ring-2 ring-white shadow-soft">
-      <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-app-primary">
-        {founder.initials}
-      </span>
-      {founder.photo && !failed ? (
-        <Image
-          src={founder.photo}
-          alt={`${founder.name}, ${founder.title}`}
-          fill
-          sizes="96px"
-          loading="lazy"
-          onError={() => setFailed(true)}
-          className="object-cover"
-        />
-      ) : null}
-    </div>
-  );
-}
 
 export function FoundersTrust() {
   return (
