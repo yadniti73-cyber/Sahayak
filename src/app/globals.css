@@ -12,14 +12,14 @@
   --text-secondary: #475569;
   --text-muted: #667085;
   --border: #d7dee8;
-  --primary: #0a66c2;
-  --primary-dark: #004182;
+  --primary: #1366c4;
+  --primary-dark: #0e52a0;
   --success: #16833a;
   --warning: #b7791f;
   --danger: #c24135;
   --focus: rgba(10, 102, 194, 0.28);
-  --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", sans-serif;
-  --font-display: "Aptos Display", "Cambria", "Georgia", serif;
+  --font-sans: var(--font-inter), "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-display: var(--font-merri), "Merriweather", "Georgia", serif;
 }
 
 * {

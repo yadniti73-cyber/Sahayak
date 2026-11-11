@@ -6,7 +6,7 @@ import { modeLabel } from "@/components/domain-cards";
 import { Section } from "@/components/PageHero";
 import { HeroIconBackdrop } from "@/components/HeroIconBackdrop";
 import { Reveal } from "@/components/Reveal";
-import { RequestGuidanceForm } from "@/components/RequestGuidanceForm";
+import { BookingWizard } from "@/components/BookingWizard";
 import { getMentorBySlug, getMentors } from "@/features/catalog/server/service";
 
 export const revalidate = 60;
@@ -59,14 +59,16 @@ export default async function MentorProfilePage({ params }) {
           </Reveal>
 
           <Reveal delay={150} className="lg:row-span-2">
-            <Panel className="shadow-soft lg:sticky lg:top-24">
-              <h2 className="text-lg font-bold">Request guidance</h2>
+            <Panel className="scroll-mt-28 shadow-soft lg:sticky lg:top-24" id="book">
+              <h2 className="text-lg font-bold">Book a session</h2>
               <p className="mt-2 text-sm text-app-muted">Choose a session mode, date, and time. Booking confirmation happens after mentor review.</p>
               {mentor.availability ? <p className="mt-3 text-sm font-semibold text-app-text">Usually available: {mentor.availability}</p> : null}
               <p className="text-sm text-app-muted">{modeLabel[mentor.mode] || "Video"} session{mentor.price ? ` - ${mentor.price}` : ""}</p>
-              <RequestGuidanceForm
+              <BookingWizard
                 mentorId={String(mentor._id)}
                 mentorSlug={mentor.slug}
+                mentorName={mentor.name}
+                mentorPhoto={mentor.photoUrl || mentor.pictureUrl || mentor.profilePhotoUrl || mentor.photo || mentor.image || ""}
                 defaultMode={mentor.mode}
                 price={mentor.price}
               />

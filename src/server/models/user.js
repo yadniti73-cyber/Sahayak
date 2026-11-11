@@ -31,6 +31,8 @@ const UserSchema = new mongoose.Schema(
     preferredLanguage: { type: String, trim: true, default: "" },
     bio: { type: String, trim: true, default: "" },
     profileCompleted: { type: Boolean, default: false },
+    emailVerified: { type: Boolean, default: false },
+    emailVerifiedAt: { type: Date, default: null },
     createdAt: { type: Date, default: () => new Date() },
     updatedAt: { type: Date, default: () => new Date() },
   },

@@ -38,8 +38,8 @@ export function Badge({ children, tone = "blue" }) {
   );
 }
 
-export function Panel({ children, className = "" }) {
-  return <section className={`app-card p-5 ${className}`}>{children}</section>;
+export function Panel({ children, className = "", ...rest }) {
+  return <section className={`app-card p-5 ${className}`} {...rest}>{children}</section>;
 }
 
 // `highlight` is rendered in the blue-to-green gradient after `title`.

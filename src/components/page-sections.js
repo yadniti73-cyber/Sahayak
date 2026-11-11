@@ -17,12 +17,19 @@ export function PublicPageIntro({ eyebrow, title, description, children }) {
   );
 }
 
-export function MentorGrid({ items = mentors }) {
+// variant "row": one wide card per line (Find Mentors). "tile": three across (category pages).
+export function MentorGrid({ items = mentors, variant = "default" }) {
+  const layout =
+    variant === "row"
+      ? "grid gap-5"
+      : variant === "tile"
+        ? "grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+        : "grid gap-4 lg:grid-cols-2";
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={layout}>
       {items.map((mentor, i) => (
-        <Reveal key={mentor.slug} delay={(i % 2) * 100}>
-          <MentorCard mentor={mentor} />
+        <Reveal key={mentor.slug} delay={variant === "tile" ? (i % 3) * 100 : (i % 2) * 100}>
+          <MentorCard mentor={mentor} variant={variant} />
         </Reveal>
       ))}
     </div>

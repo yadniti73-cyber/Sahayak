@@ -24,6 +24,8 @@ This README is the single entry point for engineers picking up this repo. It sum
 | Forms | React Hook Form + Zod |
 | Animation | CSS keyframes + IntersectionObserver (`Reveal`, `LazySection`, rotating headline words); all reduced-motion aware. Framer Motion is optional |
 | Icons | Lucide React |
+| Email | Brevo transactional API over HTTPS in production (Render blocks SMTP ports); Gmail SMTP via Nodemailer as a local-dev fallback |
+| Payments | Razorpay Checkout (UPI, cards, netbanking, wallets) — currently an isolated, admin-only test route (§17) |
 | Search (prod) | MongoDB Atlas Search over a denormalized mentor search projection |
 | Deployment | Render (app) + MongoDB Atlas (db); Node runtime for all DB-backed routes |
 
@@ -182,7 +184,7 @@ Full folder-by-folder responsibilities and import rules: [`docs/GuideShala-folde
 
 | Collection | Purpose |
 | --- | --- |
-| `users` | Identity, role (`SEEKER`/`MENTOR`/`ADMIN`), status, seeker-level profile fields |
+| `users` | Identity, role (`SEEKER`/`MENTOR`/`ADMIN`), status, `emailVerified` / `emailVerifiedAt`, seeker-level profile fields |
 | `authSessions` | Server-side session record backing every JWT — required for real logout/reset invalidation |
 | `passwordResetTokens` | Hashed, short-lived, TTL-indexed reset tokens (forgot-password flow) |
 | `mentorProfiles` | Public mentor data: pricing, experience, languages, verification summary, denormalized search fields |
@@ -197,8 +199,10 @@ Full folder-by-folder responsibilities and import rules: [`docs/GuideShala-folde
 | `favorites` | Seeker → mentor saved relationships |
 | `notifications` | In-app notifications, unread state (V1's only delivery channel) |
 | `auditLogs` | Immutable security/admin audit trail |
+| `emailOtps` | Hashed, short-lived email verification codes (one active code per email + purpose), TTL-indexed (§16) |
+| `paymentTests` | Ledger for the isolated Razorpay test payment flow; never linked to `bookings` (§17) |
 
-Future (not V1, but architecture leaves room): `payments`, `transactions`, `refunds`, `subscriptions`, `conversations`, `messages`, `videoSessions`, `communities`, `events`, `certificates`, `organizations`.
+Future (not V1, but architecture leaves room; a test-only Razorpay flow exists, see §17): `payments`, `transactions`, `refunds`, `subscriptions`, `conversations`, `messages`, `videoSessions`, `communities`, `events`, `certificates`, `organizations`.
 
 ### Canonical booking status
 
@@ -239,6 +243,7 @@ Full schema fields, indexes, and aggregation strategy: [`docs/GuideShala-mongodb
   2. Server-side guards (authoritative) — load current user, verify active session, verify role, verify ownership. **Middleware is never the sole security boundary.**
 - **Roles:** `VISITOR` (unauthenticated, not stored), `SEEKER`, `MENTOR`, `ADMIN`.
 - **Authorization chain:** middleware gate → JWT verify → session verify → user load → role check → ownership check → business policy check → service execution.
+- **Email verification (OTP):** registering with email + password requires a 6-digit code emailed to the user; the account is created only after the code is verified (§16). Google sign-in skips this because Google already verifies the email.
 - **Account protection:** failed-login counter, temporary lockout after 5 failed attempts, audit log on login success/failure/logout/reset/role change/admin action.
 - **Client boundary:** the browser never parses or stores the raw JWT; client code only ever sees a sanitized viewer model (id, name, role, avatar — never secrets).
 
@@ -264,6 +269,22 @@ GOOGLE_REDIRECT_URI=https://your-app.onrender.com/api/auth/google/callback
 # If unset it is derived from JWT_SECRET. Do not change it later without re-encrypting stored files.
 DOCUMENT_ENCRYPTION_KEY=
 
+# Email delivery. Production (Render): Brevo API key + a sender verified in Brevo.
+BREVO_API_KEY=xkeysib-...
+EMAIL_FROM=no-reply@guideshala.in
+EMAIL_FROM_NAME=GuideShala
+EMAIL_REPLY_TO=support@guideshala.in
+# Local-dev fallback only (Gmail SMTP is blocked on Render's free tier):
+GMAIL_USER=
+GMAIL_APP_PASSWORD=
+GMAIL_FROM_NAME=GuideShala
+
+# Test payments (isolated Razorpay flow, §17). Use rzp_test_ keys while testing.
+PAYMENT_TEST_ENABLED=false
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxx
+RAZORPAY_KEY_SECRET=
+RAZORPAY_TEST_WEBHOOK_SECRET=
+
 NEXT_PUBLIC_CONTACT_EMAIL=
 NEXT_PUBLIC_CONTACT_PHONE=
 NEXT_PUBLIC_CONTACT_LOCATION=
@@ -283,6 +304,12 @@ Required env vars:
 - `GOOGLE_CLIENT_SECRET` — Server-side Google OAuth client secret.
 - `GOOGLE_REDIRECT_URI` — Fully qualified redirect URI for the Google OAuth callback route.
 - `DOCUMENT_ENCRYPTION_KEY` — Optional. Secret used to encrypt mentor verification documents at rest (AES-256-GCM). Falls back to a key derived from `JWT_SECRET`. Losing or changing it makes already-uploaded documents unreadable.
+- `BREVO_API_KEY` — Brevo **API** key (`xkeysib-…`, not an SMTP key). When set, all email is sent through Brevo over HTTPS. Required in production on Render.
+- `EMAIL_FROM` — Sender address; must be a sender verified in Brevo (ideally on an authenticated domain with SPF/DKIM/DMARC). `EMAIL_FROM_NAME` and `EMAIL_REPLY_TO` are optional.
+- `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `GMAIL_FROM_NAME` — Optional Gmail SMTP fallback, used only when `BREVO_API_KEY` is unset (local development).
+- `PAYMENT_TEST_ENABLED` — Set to `true` to enable the isolated test payment page and APIs; anything else returns 404.
+- `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` — Razorpay keys. `rzp_test_…` for testing; `rzp_live_…` charges real money. Never expose the secret in a `NEXT_PUBLIC_` variable.
+- `RAZORPAY_TEST_WEBHOOK_SECRET` — Any long random string; must match the secret configured on the Razorpay webhook (optional).
 - `NEXT_PUBLIC_CONTACT_*`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_*_URL` — Optional public footer details (email, phone, location, WhatsApp number with country code, social profile links). These are public by design; never put secrets in `NEXT_PUBLIC_` variables.
 
 On Render:
@@ -292,6 +319,7 @@ On Render:
 - Add the environment variables under the service's Environment section.
 - Use your Render app URL in `GOOGLE_REDIRECT_URI`, for example `https://<your-app>.onrender.com/api/auth/google/callback`.
 - Do not expose any Google secrets in browser-facing env variables.
+- Render's free web services block outbound SMTP ports (25, 465, 587), so Gmail SMTP will time out there. Send email through the Brevo HTTPS API (see §15).
 
 ## 9. API Conventions
 
@@ -337,7 +365,7 @@ Still need explicit sign-off before/while building the related feature — see `
 - V1 session modes: `VIDEO` + `IN_PERSON` only?
 - Media storage provider for avatars (verification documents are currently stored encrypted in MongoDB, 5 MB per file; move to S3/R2 if volume grows)
 - Is forgot-password in V1 or deferred?
-- ~~Staged mentor profile completion vs. full profile at signup?~~ Decided: mentors sign up with just name/email, then complete the long verification form (§15).
+- ~~Staged mentor profile completion vs. full profile at signup?~~ Decided: mentors sign up with just name/email, then complete the long verification form (§14).
 - Review publication: immediate or moderated?
 - Category selection: single vs. multi-select on mentor profile?
 
@@ -414,7 +442,75 @@ src/app/(protected)/mentor/profile/page.js        mentor application page
 src/app/(protected)/admin/mentors/                review queue + [id] review page
 ```
 
-## 15. Applying an Update Package (script)
+## 15. Email Delivery
+
+All transactional email (OTP codes, feedback replies) goes through `src/server/integrations/email/gmail.js` (file name kept for import stability).
+
+| Environment | Provider | Config |
+| --- | --- | --- |
+| Production (Render) | Brevo transactional API, HTTPS (port 443) | `BREVO_API_KEY`, `EMAIL_FROM` |
+| Local development | Gmail SMTP via Nodemailer | `GMAIL_USER`, `GMAIL_APP_PASSWORD` |
+
+- Provider is chosen at runtime: `BREVO_API_KEY` set → Brevo; otherwise Gmail; neither → a clear "email is not configured" error (HTTP 503).
+- **Why not SMTP on Render:** free web services block outbound traffic to ports 25, 465 and 587.
+- **Brevo setup checklist:** create an API key (`xkeysib-…`, not an `xsmtp-…` key) → verify the sender address → authenticate the domain with the SPF/DKIM/DMARC records Brevo shows → make sure *Authorised IPs* blocking is off (Render's IPs change) → set the env vars above and redeploy.
+- Free tier: 300 emails/day. Check *Brevo → Transactional → Logs* when a message doesn't arrive.
+- Exports: `sendOtpEmail({ recipient, recipientName, code, minutes })`, `sendFeedbackReply({ recipient, recipientName, message, originalMessage })`.
+
+## 16. Email OTP Verification
+
+Registration requires a verified email. The account is **created only after** the code is verified.
+
+```text
+Register form (step 1: details)  -> POST /api/auth/otp/send    (code emailed, no account yet)
+Register form (step 2: code)     -> POST /api/auth/otp/verify  (marks the email verified for 15 min)
+                                 -> POST /api/auth/register    (403 unless the email is freshly verified)
+After success: verification is consumed and users.emailVerified = true
+```
+
+Rules implemented:
+
+- Code from `crypto.randomInt`; only an HMAC-SHA256 hash (keyed with `JWT_SECRET`) is stored, never the code.
+- Valid 10 minutes, single use, max 5 wrong guesses per code; constant-time comparison.
+- 60 s resend cooldown, max 5 codes per email per hour, max 20 requests per IP per hour (the IP limiter is in-memory, per server instance).
+- Registration is refused early when the email already has an account.
+- Expired records are removed by a MongoDB TTL index on `emailOtps`.
+- Local dev without email configured: the code is printed to the server console (`[otp:dev] …`). Production returns an error instead.
+
+| Method + route | Who | Purpose |
+| --- | --- | --- |
+| `POST /api/auth/otp/send` | Public | `{ email, purpose: "REGISTER", firstName? }` → sends a code |
+| `POST /api/auth/otp/verify` | Public | `{ email, purpose, code }` → verifies the code |
+
+Extending to login or password reset: add the purpose to the `emailOtps` enum and to the allow-lists in both OTP routes, call `hasVerifiedEmail` / `consumeVerifiedEmail` in the target route, reuse `<OtpField />`. For reset, always return the same message whether or not the account exists. Full details: [`docs/GuideShala-email-otp.md`](./docs/GuideShala-email-otp.md).
+
+```text
+src/server/auth/emailOtp.js         generate / hash / send / verify / limits
+src/server/models/emailOtp.js       src/server/repositories/emailOtps.js
+src/app/api/auth/otp/send|verify/route.js
+src/components/OtpField.js          6-digit input
+src/app/(auth)/register/page.js     two-step form
+```
+
+## 17. Test Payments (Razorpay, isolated)
+
+An **isolated** Razorpay Checkout flow (UPI, cards, netbanking, wallets) for verifying payments end to end. It is not linked from any page, does not touch `bookings`, charges a **fixed ₹1**, and is **admin-only** for now.
+
+| Path | Purpose |
+| --- | --- |
+| `/dev/pay-test` | Test page. 404 unless `PAYMENT_TEST_ENABLED=true`; `ADMIN` only |
+| `POST /api/payments-test/create-order` | Creates a ₹1 Razorpay order + a `paymentTests` record |
+| `POST /api/payments-test/verify` | Verifies the checkout signature, confirms the order belongs to the user, marks it `PAID` |
+| `POST /api/payments-test/webhook` | Razorpay → server (`payment.captured`, `payment.failed`), HMAC-verified on the raw body |
+
+- The amount is a server constant (`TEST_AMOUNT_PAISE` in `src/server/integrations/razorpayTest.js`); the client can never set it.
+- Uses Razorpay's REST API and Node `crypto` directly — no SDK dependency. Status updates are idempotent (`markPaid` only moves `CREATED → PAID`).
+- **Test mode:** use `rzp_test_` keys with the dashboard's Test Mode on; in Checkout choose UPI and pay with `success@razorpay` (or `failure@razorpay`). Test keys work on any domain. A UPI QR appears on desktop; don't scan it.
+- **Live mode:** website/app approval (24–48 h) for `guideshala.in` / `guideshala.com` is done in Razorpay's Live Mode and needs public Terms, Privacy and Refund/Cancellation pages. Webhooks cannot replace it. One webhook URL serves both domains.
+- **Opening it to users later:** remove the `ADMIN` check in the two API routes and use `requirePageAccess()` without roles; keep the ownership check in `verify`. For real bookings, copy the routes to `/api/payments/*`, take the amount server-side from the booking, store `bookingId` on the payment, and confirm the booking only after verification or webhook. Full steps: [`docs/GuideShala-payment-test.md`](./docs/GuideShala-payment-test.md).
+- Turn it off: set `PAYMENT_TEST_ENABLED=false`.
+
+## 18. Applying an Update Package (script)
 
 Updates can be delivered as a zip plus a small Node script. Put both in your **Downloads** folder, then from the project root (the folder that contains `src/`):
 
@@ -427,7 +523,7 @@ node ~/Downloads/apply-guideshala-update.mjs --zip /path/to/update.zip   # use a
 
 On Windows PowerShell use `node $HOME\Downloads\apply-guideshala-update.mjs`. The script lists every file as `new`, `changed` or `same`, backs up each file it overwrites into `.update-backup/<timestamp>/`, and never writes outside the project folder. Add `.update-backup/` to `.gitignore`. After applying, restart `npm run dev`.
 
-## 16. Source Documents
+## 19. Source Documents
 
 The full, unabridged versions of everything summarized above:
 
@@ -435,5 +531,7 @@ The full, unabridged versions of everything summarized above:
 - [`docs/GuideShala-folder-structure.md`](./docs/GuideShala-folder-structure.md) — canonical folder tree, import rules, anti-patterns
 - [`docs/GuideShala-mongodb-architecture.md`](./docs/GuideShala-mongodb-architecture.md) — full schema fields, indexes, aggregation and search strategy
 - [`docs/GuideShala-authentication-architecture.md`](./docs/GuideShala-authentication-architecture.md) — full auth/authz flows, middleware design, helper contracts
+- [`docs/GuideShala-email-otp.md`](./docs/GuideShala-email-otp.md) — email OTP flow, limits, extending to login/reset
+- [`docs/GuideShala-payment-test.md`](./docs/GuideShala-payment-test.md) — isolated Razorpay test payment, setup, going live
 
 ---

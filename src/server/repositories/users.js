@@ -56,3 +56,10 @@ export async function lockAdminRoleChanges({ session } = {}) {
 export async function findUserByIdForRoleChange(id, { session } = {}) {
   return User.findById(id).session(session || null);
 }
+
+export async function markUserEmailVerified(email) {
+  return User.updateOne(
+    { email: email.toLowerCase().trim() },
+    { $set: { emailVerified: true, emailVerifiedAt: new Date() } }
+  );
+}

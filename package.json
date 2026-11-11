@@ -2,7 +2,7 @@
   "name": "sahayak",
   "version": "0.1.0",
   "private": true,
-  "description": "Sahayak — mentorship marketplace platform (Next.js App Router modular monolith).",
+  "description": "Sahayak — mentorship marketplace platform..",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

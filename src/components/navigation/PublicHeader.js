@@ -1,43 +1,35 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Search, X } from "lucide-react";
-import { publicNavigationItems } from "@/lib/navigation";
-import { ButtonLink, Avatar } from "../app-primitives";
-import { getInitials, useAuth } from "../providers/AuthContext";
+import { ArrowRight, ChevronDown, Menu, Search, X } from "lucide-react";
+import { categories } from "@/lib/frontend-data";
 import { ROLE_HOME_ROUTES } from "@/lib/routes";
+import { Avatar } from "../app-primitives";
+import { GLogo } from "../GLogo";
+import { getInitials, useAuth } from "../providers/AuthContext";
+
+const links = [
+  // { label: "Find Mentors", href: "/mentors" },
+  { label: "How it works ?", href: "/how-it-works" },
+  { label: "About us", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
 
 export function PublicHeader({ children, className = "" }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [open, setOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const catRef = useRef(null);
 
-  // Shadow + reading-progress bar
-  useEffect(() => {
-    function onScroll() {
-      const y = window.scrollY;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      setScrolled(y > 8);
-      setProgress(max > 0 ? Math.min(100, (y / max) * 100) : 0);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Close the mobile menu after navigating
   useEffect(() => {
     setOpen(false);
+    setCatOpen(false);
   }, [pathname]);
 
-  // Lock page scroll while the mobile menu is open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -45,12 +37,28 @@ export function PublicHeader({ children, className = "" }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!catOpen) return undefined;
+    function onDown(e) {
+      if (catRef.current && !catRef.current.contains(e.target))
+        setCatOpen(false);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") setCatOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [catOpen]);
+
   if (children) {
     return <header className={className}>{children}</header>;
   }
 
   function isActive(href) {
-    if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
@@ -61,64 +69,109 @@ export function PublicHeader({ children, className = "" }) {
     setOpen(false);
   }
 
+  const homeHref = user
+    ? ROLE_HOME_ROUTES[user.role] || "/dashboard/home"
+    : "/login";
+  const linkCls = (active) =>
+    `rounded-lg px-3 py-2 text-[15px] font-medium transition ${
+      active
+        ? "text-emerald-700"
+        : "text-[#0b1736] hover:bg-white/70 hover:text-emerald-700"
+    }`;
+
   return (
     <header
-      className={`sticky top-0 z-40 transition-all duration-300 ${
-        scrolled ? "bg-white/80 shadow-soft backdrop-blur-lg" : "bg-white/95 backdrop-blur"
-      } ${className}`}
+      className={`sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur ${className}`}
     >
-      <div className="h-1 bg-gradient-to-r from-app-primary via-green-500 to-app-primary" aria-hidden="true" />
-
-      <div className="app-container flex min-h-16 items-center gap-4">
-        <Link href="/" className="group flex items-center gap-2.5 text-xl font-bold">
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-green-50 ring-1 ring-blue-100 transition duration-300 group-hover:rotate-6 group-hover:scale-105">
-            <Image src="/images/logo.png" alt="GuideShala logo" width={36} height={36} priority className="h-full w-full object-contain" />
+      <div className="mx-auto flex min-h-[72px] w-full max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2.5"
+          aria-label="GuideShala home"
+        >
+          <GLogo size={38} />
+          <span className="text-2xl font-extrabold tracking-tight text-[#0b1736]">
+            Guide<span className="text-emerald-700">Shala</span>
           </span>
-          <span className="bg-gradient-to-r from-app-primary to-green-600 bg-clip-text text-transparent">GuideShala</span>
         </Link>
 
         <form
           onSubmit={onSearch}
-          className="hidden min-w-64 flex-1 items-center rounded-full border border-transparent bg-slate-100/80 px-4 py-2 text-sm text-app-muted transition focus-within:border-green-400 focus-within:bg-white focus-within:shadow-sm md:flex"
+          className="hidden min-w-[220px] max-w-[330px] flex-1 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 transition focus-within:border-emerald-500 focus-within:bg-white xl:flex"
         >
-          <Search size={17} aria-hidden="true" />
+          <Search size={18} aria-hidden="true" />
           <input
             aria-label="Search mentors"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-transparent px-3 outline-none"
-            placeholder="Search mentors, city, language"
+            className="w-full bg-transparent px-3 text-[15px] text-[#0b1736] outline-none placeholder:text-slate-400"
+            placeholder="Search"
           />
         </form>
 
-        <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
-          {publicNavigationItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`relative rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  active ? "text-app-primary" : "text-app-muted hover:bg-blue-50 hover:text-app-primary"
-                }`}
-              >
-                {item.label}
-                <span
-                  className={`absolute inset-x-3 -bottom-0.5 h-0.5 origin-left rounded-full bg-gradient-to-r from-app-primary to-green-500 transition-transform duration-300 ${
-                    active ? "scale-x-100" : "scale-x-0"
-                  }`}
-                  aria-hidden="true"
-                />
-              </Link>
-            );
-          })}
+        <nav
+          className="ml-auto hidden items-center gap-1 lg:flex"
+          aria-label="Primary navigation"
+        >
+          <div className="relative" ref={catRef}>
+            <button
+              type="button"
+              onClick={() => setCatOpen((v) => !v)}
+              aria-expanded={catOpen}
+              aria-haspopup="true"
+              className={`${linkCls(pathname.startsWith("/categor"))} inline-flex items-center gap-1`}
+            >
+              Categories
+              <ChevronDown
+                size={16}
+                className={`transition ${catOpen ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+            {catOpen ? (
+              <div className="absolute left-0 top-full mt-2 w-[360px] rounded-2xl border border-slate-200 bg-white p-3 shadow-soft">
+                <div className="grid grid-cols-2 gap-1">
+                  {categories.map((c) => (
+                    <Link
+                      key={c.slug}
+                      href={`/category/${c.slug}`}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-[#0b1736] transition hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      {c.name}
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href="/categories"
+                  className="mt-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                >
+                  View all categories{" "}
+                  <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              </div>
+            ) : null}
+          </div>
+          {links.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              className={linkCls(isActive(item.href))}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 lg:ml-2">
+        <div className="ml-auto flex items-center gap-2 lg:ml-4">
           {user ? (
-            <Link href={ROLE_HOME_ROUTES[user.role] || "/dashboard/home"} title={`${user.firstName} ${user.lastName}`}>
-              <Avatar initials={getInitials(user.firstName, user.lastName)} src={user.pictureUrl} alt={`${user.firstName} ${user.lastName}`} size="sm" />
+            <Link href={homeHref} title={`${user.firstName} ${user.lastName}`}>
+              <Avatar
+                initials={getInitials(user.firstName, user.lastName)}
+                src={user.pictureUrl}
+                alt={`${user.firstName} ${user.lastName}`}
+                size="sm"
+              />
             </Link>
           ) : authLoading ? (
             <span className="h-10 w-10" aria-hidden="true" />
@@ -126,24 +179,37 @@ export function PublicHeader({ children, className = "" }) {
             <>
               <Link
                 href="/login"
-                className="hidden rounded-lg px-3 py-2 text-md font-bold text-white bg-green-500 hover:bg-green-600 sm:inline-flex"
+                className="hidden rounded-lg px-3 py-2 text-[15px] font-medium text-[#0b1736] transition hover:text-emerald-700 sm:inline-flex"
               >
-                Log in
+                Login
               </Link>
-              <ButtonLink href="/register" className="px-4 py-2 ">
-                Get started
-              </ButtonLink>
+              <Link
+                href="/register?role=mentor"
+                className="hidden rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-[15px] font-medium text-[#0b1736] transition hover:border-[#0b1736] md:inline-flex"
+              >
+                Join as guide
+              </Link>
             </>
           )}
+          <Link
+            href="/mentors"
+            className="hidden items-center gap-2 rounded-xl bg-[#0b1736] px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-[#15275a] sm:inline-flex"
+          >
+            Find an Expert <ArrowRight size={16} aria-hidden="true" />
+          </Link>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="rounded-lg border border-app-border bg-white p-2 text-app-primary transition hover:bg-blue-50 lg:hidden"
+            className="rounded-lg border border-slate-200 bg-white p-2 text-[#0b1736] transition hover:bg-slate-50 lg:hidden"
           >
-            {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            {open ? (
+              <X size={20} aria-hidden="true" />
+            ) : (
+              <Menu size={20} aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>
@@ -151,57 +217,82 @@ export function PublicHeader({ children, className = "" }) {
       {/* Mobile menu */}
       <div
         id="mobile-menu"
-        className={`absolute inset-x-0 top-full origin-top border-t border-app-border bg-white/95 shadow-soft backdrop-blur-lg transition duration-300 lg:hidden ${
-          open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0"
+        className={`absolute inset-x-0 top-full max-h-[80vh] origin-top overflow-y-auto border-t border-slate-200 bg-white shadow-soft transition duration-300 lg:hidden ${
+          open
+            ? "visible translate-y-0 opacity-100"
+            : "invisible -translate-y-2 opacity-0"
         }`}
       >
         <div className="app-container grid gap-4 py-4">
-          <form onSubmit={onSearch} className="flex items-center rounded-full bg-slate-100 px-4 py-2.5 text-sm text-app-muted">
+          <form
+            onSubmit={onSearch}
+            className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500"
+          >
             <Search size={17} aria-hidden="true" />
             <input
               aria-label="Search mentors"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full bg-transparent px-3 outline-none"
-              placeholder="Search mentors, city, language"
+              placeholder="Search"
             />
           </form>
           <nav className="grid gap-1" aria-label="Mobile navigation">
-            {publicNavigationItems.map((item) => (
+            <Link
+              href="/categories"
+              className={`${linkCls(pathname.startsWith("/categor"))} py-3`}
+            >
+              Categories
+            </Link>
+            {links.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-3 text-md font-medium transition ${
-                  isActive(item.href)
-                    ? "bg-gradient-to-r from-blue-50 to-green-50 text-app-primary"
-                    : "text-app-muted hover:bg-blue-50 hover:text-app-primary"
-                }`}
+                className={`${linkCls(isActive(item.href))} py-3`}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
           {user ? (
-            <Link href={ROLE_HOME_ROUTES[user.role] || "/dashboard/home"} className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 px-3 py-3">
-              <Avatar initials={getInitials(user.firstName, user.lastName)} src={user.pictureUrl} alt="" size="sm" />
-              <span className="text-md font-medium text-app-primary">{user.firstName} {user.lastName}</span>
+            <Link
+              href={homeHref}
+              className="flex items-center gap-3 rounded-xl bg-emerald-50 px-3 py-3"
+            >
+              <Avatar
+                initials={getInitials(user.firstName, user.lastName)}
+                src={user.pictureUrl}
+                alt=""
+                size="sm"
+              />
+              <span className="font-medium text-[#0b1736]">
+                {user.firstName} {user.lastName}
+              </span>
             </Link>
           ) : authLoading ? null : (
             <div className="grid grid-cols-2 gap-3">
-              <ButtonLink href="/login" variant="primary">Log in</ButtonLink>
-              <ButtonLink href="/register">Get started</ButtonLink>
+              <Link
+                href="/login"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 text-sm font-semibold text-[#0b1736]"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register?role=mentor"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 text-sm font-semibold text-[#0b1736]"
+              >
+                Join as guide
+              </Link>
             </div>
           )}
+          <Link
+            href="/mentors"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0b1736] text-sm font-semibold text-white"
+          >
+            Find an Expert <ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </div>
       </div>
-
-      {/* Reading progress */}
-      <div
-        className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-app-primary to-green-500 transition-[width] duration-150"
-        style={{ width: `${progress}%` }}
-        aria-hidden="true"
-      />
     </header>
   );
 }
-

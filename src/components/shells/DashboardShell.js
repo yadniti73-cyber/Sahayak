@@ -92,8 +92,12 @@ function SidebarContent({ role, navItems, activeHref, onNavigate, user, authLoad
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center justify-between border-b border-app-border px-5">
-        <Link href="/" onClick={onNavigate} className="bg-gradient-to-r from-app-primary to-green-600 bg-clip-text text-xl font-bold text-transparent">
-          GuideShala
+        <Link href="/" onClick={onNavigate} className="flex items-center gap-2.5" aria-label="GuideShala home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo.png" alt="" width={34} height={31} className="h-8 w-auto" />
+          <span className="text-xl font-extrabold tracking-tight text-[#1366c4]">
+            Guide<span className="text-[#0f7a3d]">Shala</span>
+          </span>
         </Link>
         <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${roleTone[role] || roleTone.seeker}`}>
           {role}

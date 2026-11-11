@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2, Zap } from "lucide-react";
 
-const topics = [ "Mentor verification", "Support"];
+const topics = ["Mentor verification", "Support", "Partnership"];
 
-export function ContactForm() {
-  const [form, setForm] = useState({ name: "", email: "", topic: topics[0], message: "" });
+export function ContactForm({ initialTopic = "", initialMessage = "" }) {
+  const startTopic = topics.includes(initialTopic) ? initialTopic : topics[0];
+  const [form, setForm] = useState({ name: "", email: "", topic: startTopic, message: initialMessage });
   const [status, setStatus] = useState("idle"); // idle | sending | done | error
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -22,7 +23,7 @@ export function ContactForm() {
       });
       if (!res.ok) throw new Error("Request failed");
       setStatus("done");
-      setForm({ name: "", email: "", topic: topics[0], message: "" });
+      setForm({ name: "", email: "", topic: startTopic, message: "" });
     } catch {
       setStatus("error");
     }
@@ -39,15 +40,15 @@ export function ContactForm() {
 
       <label className="grid gap-1 text-sm font-semibold text-app-text">
         Full name
-        <input required className="app-input" value={form.name} onChange={update("name")} autoComplete="name" />
+        <input required className="app-input !rounded-xl" value={form.name} onChange={update("name")} autoComplete="name" />
       </label>
       <label className="grid gap-1 text-sm font-semibold text-app-text">
         Email
-        <input required type="email" className="app-input" value={form.email} onChange={update("email")} autoComplete="email" />
+        <input required type="email" className="app-input !rounded-xl" value={form.email} onChange={update("email")} autoComplete="email" />
       </label>
       <label className="grid gap-1 text-sm font-semibold text-app-text">
         Topic
-        <select className="app-input" value={form.topic} onChange={update("topic")}>
+        <select className="app-input !rounded-xl" value={form.topic} onChange={update("topic")}>
           {topics.map((t) => (
             <option key={t}>{t}</option>
           ))}
@@ -58,7 +59,7 @@ export function ContactForm() {
         <textarea
           required
           maxLength={1000}
-          className="app-input min-h-32 resize-none"
+          className="app-input !rounded-xl min-h-40 resize-none"
           value={form.message}
           onChange={update("message")}
         />
@@ -71,10 +72,10 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === "sending"}
-        className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-green-600 bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-green-700 hover:shadow-soft disabled:opacity-60"
+        className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-700 px-6 py-3.5 text-base font-semibold text-white transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-soft disabled:opacity-60"
       >
         {status === "sending" ? "Sending..." : "Send message"}
-        <Send size={16} className="transition group-hover:translate-x-1" aria-hidden="true" />
+        <Zap size={16} className="transition group-hover:translate-x-1" aria-hidden="true" />
       </button>
     </form>
   );
